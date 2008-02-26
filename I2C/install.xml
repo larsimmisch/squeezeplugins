@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<extension>
+	<name>PLUGIN_I2C_NAME</name>
+	<module>Slim::Plugin::I2C::Plugin</module>
+	<version>1.0</version>
+	<description>PLUGIN_I2C_NAME_DESC</description>
+	<creator>Felix Müller</creator>
+	<email>felix.mueller@gwendesign.com</email>
+
+	<defaultState>enabled</defaultState>
+        
+	<homepageURL>http://www.gwendesign.com/slimserver/dev_hard_and_software.htm/</homepageURL>
+	<type>2</type><!-- type=extension -->
+
+	<targetApplication>
+		<id>SqueezeCenter</id>
+		<minVersion>7.0a</minVersion>
+		<maxVersion>7.0+</maxVersion>
+	</targetApplication>
+
+</extension>

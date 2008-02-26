@@ -1,0 +1,50 @@
+# String file for I2C plugin
+
+PLUGIN_I2C_NAME
+	DE	I2C
+	EN	I2C
+
+PLUGIN_I2C_NAME_DESC
+	DE	Zugriff zu I2C Ein/Ausgängen
+	EN	Access I2C in/outputs
+
+# Should not be longer than 7 Characters
+PLUGIN_I2C_STATE
+	DE	Zustand
+	EN	State
+
+# Should not be longer than 7 Characters
+PLUGIN_I2C_SETUP
+	DE	Konfig.
+	EN	Setup
+
+PLUGIN_I2C_OUT
+	DE	Ausgang
+	EN	Output
+
+PLUGIN_I2C_IN
+	DE	Eingang
+	EN	Input
+
+PLUGIN_I2C_POWER
+	DE	Ein/Aus wie das Gerät
+	EN	Power
+
+PLUGIN_I2C_PULSE
+	DE	Pulsausgang
+	EN	Pulse output
+
+PLUGIN_I2C_POWERON
+	DE	Puls beim Einschalten
+	EN	Pulse on power on
+
+PLUGIN_I2C_POWEROFF
+	DE	Puls beim Ausschalten
+	EN	Pulse on power off
+
+PLUGIN_I2C_POWERPULSE
+	DE	Puls beim Ein- und Ausschalten
+	EN	Pulse on power change
+
+
+

@@ -15,8 +15,7 @@
 #	----------------------------------------------------------------------
 #	Function:
 #
-#	- Each of the 8 I/Os has 7 modes, selectable in the I2C setup menu
-#	  -> (in)  input:         (ATTENTION: functionality is missing.)
+#	- Each of the 8 I/Os has 6 modes, selectable in the I2C setup menu
 #	  -> (out) output:        switchable by the number buttons 1..8 on the remote
 #	                           from the I2C menu or
 #	                           when the client is turned off (needs Power.pm change)
@@ -115,15 +114,10 @@ my $prefs = preferences('plugin.i2c');
 # Global variables
 # ----------------------------------------------------------------------------
 my $autoTurnOffTime	= 3.0;	# in seconds
-my $ipoDelayTime	= 0.1;	# in seconds
+my $pulseWidth	= 0.1;	# in seconds
 
 my @arrPages = ();	# 0 = Setup, 1 = State
 my %hshDisplayCurrent;	# Current display for a client
-
-#          Channel  1 . . . . . . 8
-my @arrDirection = (0,0,0,0,1,1,1,1);  # See %setupdesc for values 
-my @arrOutput =    (0,0,0,0,0,0,0,0);  # 0 = off, 1 = on
-my @arrInput =     (1,1,1,1,1,1,1,1);  # 0 = low, 1 = high
 
 my @arrPendingTimer = ();
 
@@ -142,13 +136,12 @@ $arrPages[1] = \@arrLinesState;
 # 5 = Output: pulse when power off
 # 6 = Output: negated pulse when power 
 #     changes
-my @setupdesc = (["out", string("PLUGIN_I2C_OUT")],
-				 ["in ", string("PLUGIN_I2C_IN")],
-				 ["pow", string("PLUGIN_I2C_POWER")],
-				 ["pls", string("PLUGIN_I2C_PULSE")],
-				 ["pon", string("PLUGIN_I2C_POWERON")],
-				 ["pof", string("PLUGIN_I2C_POWEROFF")],
-				 ["pop", string("PLUGIN_I2C_POWERPULSE")]);
+our @setupdesc = (["out", string("PLUGIN_I2C_OUT")],
+				  ["pow", string("PLUGIN_I2C_POWER")],
+				  ["pls", string("PLUGIN_I2C_PULSE")],
+				  ["pon", string("PLUGIN_I2C_POWERON")],
+				  ["pof", string("PLUGIN_I2C_POWEROFF")],
+				  ["pop", string("PLUGIN_I2C_POWERPULSE")]);
 				 
 sub initPlugin {
 	my $class = shift;
@@ -195,25 +188,12 @@ my %functions = (
 			if( ( $digit >= 1) && ( $digit <= 8)) {
 				my $iIndex = $digit - 1;
 
-				readIODirection( $client);
+				my @direction = readIODirection( $client);
 
-				# Rotate thru the different modes
-				if( $arrDirection[$iIndex] == 1) {
-					$arrDirection[$iIndex] = 0;		# Output: toggle
-				} elsif( $arrDirection[$iIndex] == 0) {
-					$arrDirection[$iIndex] = 2;		# Output: linked to power state
-				} elsif( $arrDirection[$iIndex] == 2) {
-					$arrDirection[$iIndex] = 3;		# Output: timed
-				} elsif( $arrDirection[$iIndex] == 3) {
-					$arrDirection[$iIndex] = 4;		# Output: pulse when power on
-				} elsif( $arrDirection[$iIndex] == 4) {
-					$arrDirection[$iIndex] = 5;		# Output: pulse when power off
-				} elsif( $arrDirection[$iIndex] == 5) {
-					$arrDirection[$iIndex] = 6;		# Output: pulse when power changes
-				} elsif( $arrDirection[$iIndex] == 6) {
-					$arrDirection[$iIndex] = 1;		# Input
-				}
-				writeIODirection( $client);
+				# Rotate through the different modes
+				$direction[$iIndex] = ($direction[$iIndex] + 1) % $#setupdesc;
+
+				writeIODirection( $client, @direction);
 			}
 		}
 	}
@@ -229,24 +209,19 @@ sub lines {
 	my $szState = "        ";
 	my $szSetup = "        ";
 
-	readIOOutput( $client);
-	readIODirection( $client);
+	my @output = readIOOutput( $client);
+	my @direction = readIODirection( $client);
 
 	for( $iIndex = 0; $iIndex <= 7; $iIndex++) {
-		if( $arrDirection[$iIndex] == 1) {
-			if( $arrInput[$iIndex] == 1) {
-				$szState .= "H   ";
-			} else {
-				$szState .= "L   ";
-			}
-			$szSetup .= $setupdesc[$arrDirection[$iIndex]][0] . " ";
+		if( $direction[$iIndex] == 1) {
+			$szSetup .= $setupdesc[$direction[$iIndex]][0] . " ";
 		} else {
-			if( $arrOutput[$iIndex] == 0) {
+			if( $output[$iIndex] == 0) {
 				$szState .= "Off ";
 			} else {
 				$szState .= "On  ";
 			}
-			$szSetup .= $setupdesc[$arrDirection[$iIndex]][0] . " ";
+			$szSetup .= $setupdesc[$direction[$iIndex]][0] . " ";
 		}
 	}
 	$arrLinesState[1] = $szState;
@@ -274,16 +249,17 @@ sub setMode {
 # ----------------------------------------------------------------------------
 sub writeIOOutput {
 	my $client = shift;
+	my @output = shift;
 	$prefs->client($client)->set(
 					"ioOutput",
-					$arrOutput[0] . " " .
-					$arrOutput[1] . " " .
-					$arrOutput[2] . " " .
-					$arrOutput[3] . " " .
-					$arrOutput[4] . " " .
-					$arrOutput[5] . " " .
-					$arrOutput[6] . " " .
-					$arrOutput[7]);
+					$output[0] . " " .
+					$output[1] . " " .
+					$output[2] . " " .
+					$output[3] . " " .
+					$output[4] . " " .
+					$output[5] . " " .
+					$output[6] . " " .
+					$output[7]);
 }
 
 # ----------------------------------------------------------------------------
@@ -295,11 +271,10 @@ sub readIOOutput {
 
 	$szOutput = $prefs->client($client)->get("ioOutput");
 	if( !defined( $szOutput)) {
-		### to do ### empty arrOutput
-		writeIOOutput( $client);
+		writeIOOutput( $client, (0, 0, 0, 0, 0, 0, 0, 0));
 		$szOutput = $prefs->client($client)->get("ioOutput");
 	}
-	@arrOutput = split( " ", $szOutput, 8);
+	return split( " ", $szOutput, 8);
 }
 
 # ----------------------------------------------------------------------------
@@ -307,16 +282,18 @@ sub readIOOutput {
 # ----------------------------------------------------------------------------
 sub writeIODirection {
 	my $client = shift;
+	my @direction = shift;
+
 	$prefs->client($client)->set(
 					"ioDirection",
-					$arrDirection[0] . " " .
-					$arrDirection[1] . " " .
-					$arrDirection[2] . " " .
-					$arrDirection[3] . " " .
-					$arrDirection[4] . " " .
-					$arrDirection[5] . " " .
-					$arrDirection[6] . " " .
-					$arrDirection[7]);
+					$direction[0] . " " .
+					$direction[1] . " " .
+					$direction[2] . " " .
+					$direction[3] . " " .
+					$direction[4] . " " .
+					$direction[5] . " " .
+					$direction[6] . " " .
+					$direction[7]);
 }
 
 # ----------------------------------------------------------------------------
@@ -328,15 +305,15 @@ sub readIODirection {
 
 	$szDirection =  $prefs->client($client)->get("ioDirection");
 	if( !defined( $szDirection)) {
-		### to do ### empty arrDirection
-		writeIODirection( $client);
+		### to do ### empty direction
+		writeIODirection( $client, (0, 0, 0, 0, 0, 0, 0, 0));
 		$szDirection =  $prefs->client($client)->get("ioDirection");
 	}
-	@arrDirection = split( " ", $szDirection, 8);
+	return split( " ", $szDirection, 8);
 }
 
 # ----------------------------------------------------------------------------
-# Build an intern list of timer references
+# Build an internal list of timer references
 # ----------------------------------------------------------------------------
 sub addPendingTimer {
 	my $timer = shift;
@@ -435,23 +412,23 @@ sub handlePowerOnOff {
 
 	$log->debug( "I2C::handlePowerSwitch() on: $bOn\n");
 
-	readIODirection( $client);  
+	my @direction = readIODirection( $client);  
 	for( my $iIndex = 0; $iIndex <= 7; $iIndex++) {
-		if( $arrDirection[$iIndex] == 2) {
+		if( $direction[$iIndex] == 2) {
 			if( $bOn) {
 				switchIO( $client, $iIndex + 1, 1);  # Channel 1, on
 			} else {
 				switchIO( $client, $iIndex + 1, 0);  # Channel 1, off
 			}
-		} elsif( ( $arrDirection[$iIndex] == 4) && ( $bOn == 1)) {
+		} elsif( ( $direction[$iIndex] == 4) && ( $bOn == 1)) {
 			timedIO( $client, $iIndex + 1);
-		} elsif( ( $arrDirection[$iIndex] == 5) && ( $bOn == 0)) {
+		} elsif( ( $direction[$iIndex] == 5) && ( $bOn == 0)) {
 			timedIO( $client, $iIndex + 1);
-		} elsif( $arrDirection[$iIndex] == 6) {
+		} elsif( $direction[$iIndex] == 6) {
 			switchIO( $client, $iIndex + 1, 1);  # on
 			my $timer = Slim::Utils::Timers::setTimer( $client, 
 													   Time::HiRes::time()
-													   + $ipoDelayTime, 
+													   + $pulseWidth, 
 													   \&timedIO_IPO, 
 													   $iIndex + 1);
 			addPendingTimer( $timer);
@@ -472,24 +449,24 @@ sub toggleIO {
 
 	my $iIndex = $iButton - 1;
 
-	readIODirection( $client);  
-	if( $arrDirection[$iIndex] == 1) {		# Input
+	my @direction = readIODirection( $client);  
+	if( $direction[$iIndex] == 1) {		# Input
 		return;
-	} elsif( $arrDirection[$iIndex] == 3) {		# Output: timed
+	} elsif( $direction[$iIndex] == 3) {		# Output: timed
 		timedIO( $client, $iButton);
-	} elsif( $arrDirection[$iIndex] == 4) {		# Output: pulse on
+	} elsif( $direction[$iIndex] == 4) {		# Output: pulse on
 		timedIO( $client, $iButton);
-	} elsif( $arrDirection[$iIndex] == 5) {		# Output: pulse off
+	} elsif( $direction[$iIndex] == 5) {		# Output: pulse off
 		timedIO( $client, $iButton);
-	} elsif( $arrDirection[$iIndex] == 6) {		# IPO
+	} elsif( $direction[$iIndex] == 6) {		# IPO
 		switchIO( $client, $iButton, 1);        # on
 		my $timer = Slim::Utils::Timers::setTimer( $client, Time::HiRes::time()
-												   + $ipoDelayTime, 
+												   + $pulseWidth, 
 												   \&timedIO_IPO, $iButton);
 		addPendingTimer( $timer);
-	} elsif( $arrDirection[$iIndex] == 0) {		# Output: toggle
-		readIOOutput( $client);
-		if( $arrOutput[$iIndex] == 0) {
+	} elsif( $direction[$iIndex] == 0) {		# Output: toggle
+		my @output = readIOOutput( $client);
+		if( $output[$iIndex] == 0) {
 			switchIO( $client, $iButton, 1);
 		} else {
 			switchIO( $client, $iButton, 0);
@@ -503,10 +480,10 @@ sub timedIO {
 	my $iButton = shift;
 	my $iIndex = $iButton - 1;
 
-	$log->debug( "I2C::timedIO() button: $iButton state: $arrOutput[$iIndex]\n");
+	my @output = readIOOutput( $client);
 
-	readIOOutput( $client);
-	if( $arrOutput[$iIndex] == 0) {
+	$log->debug( "I2C::timedIO() button: $iButton state: $output[$iIndex]\n");
+	if( $output[$iIndex] == 0) {
 		switchIO( $client, $iButton, 1);
 		my $timer = Slim::Utils::Timers::setTimer( $client, Time::HiRes::time()
 												   + $autoTurnOffTime, 
@@ -556,41 +533,41 @@ sub switchIO {
 
 	$log->debug( "I2C::switchIO() channel: $iChannel state: $bState\n");
 
-	readIOOutput( $client);
-	readIODirection( $client);
+	my @output = readIOOutput( $client);
+	my @direction = readIODirection( $client);
 
-	$arrOutput[$iChannel - 1] = $bState;
+	$output[$iChannel - 1] = $bState;
 
 	my $byValue = 0xff;
 
-	if( $arrOutput[7] == 1) { $byValue = $byValue & 0x7f;}
-	if( $arrOutput[6] == 1) { $byValue = $byValue & 0xbf;}
-	if( $arrOutput[5] == 1) { $byValue = $byValue & 0xdf;}
-	if( $arrOutput[4] == 1) { $byValue = $byValue & 0xef;}
-	if( $arrOutput[3] == 1) { $byValue = $byValue & 0xf7;}
-	if( $arrOutput[2] == 1) { $byValue = $byValue & 0xfb;}
-	if( $arrOutput[1] == 1) { $byValue = $byValue & 0xfd;}
-	if( $arrOutput[0] == 1) { $byValue = $byValue & 0xfe;}
+	if( $output[7] == 1) { $byValue = $byValue & 0x7f;}
+	if( $output[6] == 1) { $byValue = $byValue & 0xbf;}
+	if( $output[5] == 1) { $byValue = $byValue & 0xdf;}
+	if( $output[4] == 1) { $byValue = $byValue & 0xef;}
+	if( $output[3] == 1) { $byValue = $byValue & 0xf7;}
+	if( $output[2] == 1) { $byValue = $byValue & 0xfb;}
+	if( $output[1] == 1) { $byValue = $byValue & 0xfd;}
+	if( $output[0] == 1) { $byValue = $byValue & 0xfe;}
 
-	if( $arrDirection[7] == 1) { $byValue = $byValue | 0x80;}
-	if( $arrDirection[6] == 1) { $byValue = $byValue | 0x40;}
-	if( $arrDirection[5] == 1) { $byValue = $byValue | 0x20;}
-	if( $arrDirection[4] == 1) { $byValue = $byValue | 0x10;}
-	if( $arrDirection[3] == 1) { $byValue = $byValue | 0x08;}
-	if( $arrDirection[2] == 1) { $byValue = $byValue | 0x04;}
-	if( $arrDirection[1] == 1) { $byValue = $byValue | 0x02;}
-	if( $arrDirection[0] == 1) { $byValue = $byValue | 0x01;}
+	if( $direction[7] == 1) { $byValue = $byValue | 0x80;}
+	if( $direction[6] == 1) { $byValue = $byValue | 0x40;}
+	if( $direction[5] == 1) { $byValue = $byValue | 0x20;}
+	if( $direction[4] == 1) { $byValue = $byValue | 0x10;}
+	if( $direction[3] == 1) { $byValue = $byValue | 0x08;}
+	if( $direction[2] == 1) { $byValue = $byValue | 0x04;}
+	if( $direction[1] == 1) { $byValue = $byValue | 0x02;}
+	if( $direction[0] == 1) { $byValue = $byValue | 0x01;}
 
 	my $szValue = sprintf( "%02x", $byValue);
 
-	$log->debug( $arrOutput[7]);
-	$log->debug( $arrOutput[6]);
-	$log->debug( $arrOutput[5]);
-	$log->debug( $arrOutput[4]);
-	$log->debug( $arrOutput[3]);
-	$log->debug( $arrOutput[2]);
-	$log->debug( $arrOutput[1]);
-	$log->debug( $arrOutput[0]);
+	$log->debug( $output[7]);
+	$log->debug( $output[6]);
+	$log->debug( $output[5]);
+	$log->debug( $output[4]);
+	$log->debug( $output[3]);
+	$log->debug( $output[2]);
+	$log->debug( $output[1]);
+	$log->debug( $output[0]);
 	$log->debug( " $szValue\n");
 
 	my $i2c = undef;
@@ -624,7 +601,7 @@ sub switchIO {
 
 	$client->i2c( $i2c);
 
-	writeIOOutput( $client);
+	writeIOOutput( $client, @output);
 
 
 ### More old stuff

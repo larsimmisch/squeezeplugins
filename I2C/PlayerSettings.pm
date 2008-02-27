@@ -10,11 +10,10 @@ use base qw(Slim::Web::Settings);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
+use Plugins::I2C::Plugin;
 
 my $prefs = preferences('plugin.i2c');
 my $log   = logger('plugin.i2c');
-
-my @arrDirection;
 
 sub name {
 	return 'PLUGIN_I2C_NAME';
@@ -31,20 +30,28 @@ sub page {
 sub handler {
 	my ($class, $client, $params) = @_;
 	
+	$log->debug("player: " . $client->id);
+	
 	if ( $client ) {
-		Plugins::I2C::Plugin::readIODirection($client);
+		my @direction = Plugins::I2C::Plugin::readIODirection($client);
 
 		# Extract the long description
 		my @desc = ();
 		for my $i (0 .. $#Plugins::I2C::Plugin::setupdesc) {
 			push(@desc, $Plugins::I2C::Plugin::setupdesc[$i][1]);
 		}
-
-		$params->{prefs}->{direction} = @arrDirection;
-		$params->{prefs}->{desc} = @desc;
-		
+		  
+		$params->{prefs}->{direction} = \@direction;
+		$params->{prefs}->{desc} = \@desc;
+		  
 		if ( $params->{saveSettings} ) {
-			Plugins::I2C::Plugin::witeIODirection($client);
+			$log->debug("IO 1: " . $params->{io0});
+			@direction = ();
+			for my $i (0 .. 7) {
+				my $io = "io$i";
+				push(@direction, $params->{$io} || 0);
+			}
+			Plugins::I2C::Plugin::writeIODirection($client, @direction);
 		}
 	}
 	

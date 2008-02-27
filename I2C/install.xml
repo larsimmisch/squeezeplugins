@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <extension>
 	<name>PLUGIN_I2C_NAME</name>
-	<module>Slim::Plugin::I2C::Plugin</module>
+	<module>Plugins::I2C::Plugin</module>
 	<version>1.0</version>
 	<description>PLUGIN_I2C_NAME_DESC</description>
 	<creator>Felix Müller</creator>

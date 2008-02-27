@@ -4,9 +4,13 @@ PLUGIN_I2C_NAME
 	DE	I2C
 	EN	I2C
 
-PLUGIN_I2C_NAME_DESC
-	DE	Zugriff zu I2C Ein/Ausgängen
-	EN	Access I2C in/outputs
+PLUGIN_I2C_SETUP
+	DE	I2C Einstellungen
+	EN	I2C Settings
+
+PLUGIN_I2C_DESC
+	DE	Zugriff zu I2C Ein/Ausgängen (benötigt eigene Hardware)
+	EN	Access I2C in/outputs (via custom hardware)
 
 # Should not be longer than 7 Characters
 PLUGIN_I2C_STATE
@@ -45,6 +49,3 @@ PLUGIN_I2C_POWEROFF
 PLUGIN_I2C_POWERPULSE
 	DE	Puls beim Ein- und Ausschalten
 	EN	Pulse on power change
-
-
-

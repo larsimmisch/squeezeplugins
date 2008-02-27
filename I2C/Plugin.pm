@@ -20,12 +20,12 @@
 #	  -> (out) output:        switchable by the number buttons 1..8 on the remote
 #	                           from the I2C menu or
 #	                           when the client is turned off (needs Power.pm change)
-#	  -> (OUT) linked output: same as output, but linked with the power of the
+#	  -> (pow) linked output: same as output, but linked with the power of the
 #	                           client
-#	  -> (tmr) timed output:  same as output, but turns off after a certain time
-#	  -> (ION) pulse output: when client is turned on
-#	  -> (IOF) pulse output: when client is turned off
-#     -> (IPO) pulse output; when clent is turned on or off
+#	  -> (pls) timed output:  same as output, but turns off after a certain time
+#	  -> (pon) pulse output: when client is turned on
+#	  -> (pof) pulse output: when client is turned off
+#     -> (pop) pulse output; when clent is turned on or off
 #
 #	If used with a skin (Fishbone) that has power on/off possibilities,
 #	the amplifier can be turned on/off together with the client
@@ -90,13 +90,15 @@
 #	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #	02111-1307 USA
 #
-package Slim::Plugin::I2C::Plugin;
+package Plugins::I2C::Plugin;
+
 use strict;
 use Slim::Utils::Prefs;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string);
 use base qw(Slim::Plugin::Base);
 use vars qw($VERSION);
+use Plugins::I2C::PlayerSettings;
 
 $VERSION = substr(q$Revision: 1.1 $,10);
 
@@ -152,6 +154,8 @@ sub initPlugin {
 	my $class = shift;
 
 	$class->SUPER::initPlugin();
+
+	Plugins::I2C::PlayerSettings->new;
 
 	# Install callback to get client power state changes
 	# Slim::Control::Command::setExecuteCallback( \&commandCallback);

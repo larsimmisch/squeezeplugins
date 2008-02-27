@@ -1,21 +1,22 @@
 [% PROCESS settings/header.html %]
 
-	[% WRAPPER setting title="SETUP_PLUGIN_I2C" desc="SETUP_PLUGIN_I2C_DESC" %]
-		<select name="setup0">
-			<option value="0">[% "PLUGIN_I2C_IN" | string %]</option>
-		[% FOR dir IN prefs.direction %]
-			<option value="[% global_account.username %]" [% IF global_account.username == prefs.account %]selected="selected"[% END %] />[% global_account.username %]</option>
+	[% WRAPPER setting title="PLUGIN_I2C_SETUP" desc="PLUGIN_I2C_DESC" %]
+
+	    [% FOR i IN [ 0 .. 7 ] %]
+		    [% dir = prefs.direction.i %]
+	        IO [% i + 1 %]: <select name="i2c[% i %]"> 
+
+		    [% FOR desc IN prefs.desc %]
+
+			    <option value="[% dir %]" 
+				    [% IF loop.index == dir %]selected="selected"[% END %]>
+					[% desc | string %]
+				</option>
+			[% END %]
+
+		</select><br>
 		[% END %]
-		</select>
 		
-		[% IF !prefs.enable_scrobbling %]
-			<br /><br />
-			[% "SETUP_PLUGIN_AUDIOSCROBBLER_WARNING_SCROBBLE_DISABLED" | string %]
-		[% END %]
-	[% END %]
-	
-	[% WRAPPER setting title="" desc="" %]
-		[% "SETUP_PLUGIN_AUDIOSCROBBLER_ACCOUNT_NOTE" | string %]
 	[% END %]
 	
 [% PROCESS settings/footer.html %]

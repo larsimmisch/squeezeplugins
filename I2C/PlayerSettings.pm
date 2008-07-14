@@ -30,28 +30,27 @@ sub page {
 sub handler {
 	my ($class, $client, $params) = @_;
 	
-	$log->debug("player: " . $client->id);
-	
 	if ( $client ) {
-		my @direction = Plugins::I2C::Plugin::readIODirection($client);
+		my @command = Plugins::I2C::Plugin::readIOCommand($client);
 
+		$log->debug("player: " . $client->id . " commands: @command");
+	
 		# Extract the long description
 		my @desc = ();
-		for my $i (0 .. $#Plugins::I2C::Plugin::setupdesc) {
-			push(@desc, $Plugins::I2C::Plugin::setupdesc[$i][1]);
+		for my $i (0 .. $#Plugins::I2C::Plugin::Commands) {
+			push(@desc, $Plugins::I2C::Plugin::Commands[$i][1]);
 		}
 		  
-		$params->{prefs}->{direction} = \@direction;
+		$params->{prefs}->{command} = \@command;
 		$params->{prefs}->{desc} = \@desc;
 		  
 		if ( $params->{saveSettings} ) {
-			$log->debug("IO 1: " . $params->{io0});
-			@direction = ();
+			@command = ();
 			for my $i (0 .. 7) {
 				my $io = "io$i";
-				push(@direction, $params->{$io} || 0);
+				push(@command, $params->{$io} || 0);
 			}
-			Plugins::I2C::Plugin::writeIODirection($client, @direction);
+			Plugins::I2C::Plugin::writeIOCommand($client, @command);
 		}
 	}
 	

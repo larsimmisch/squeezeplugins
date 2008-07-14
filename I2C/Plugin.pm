@@ -1,30 +1,32 @@
-#	I2C.pm
+#	I2C::Plugin.pm
 #
 #	Author: Felix Mueller <felix(dot)mueller(at)gwendesign(dot)com>
 #
-#   Small modifications for a mechanical flip-flop, updated to SqueezeCenter
-#   and renamed from ExtendedIO to I2C Lars Immisch <lars@ibp.de> 
+#   Ported to SqueezeCenter, extended and renamed from 
+#   ExtendedIO to I2C by Lars Immisch <lars@ibp.de> 
 #
 #	Copyright (c) 2003-2005 GWENDESIGN
 #	All rights reserved.
 #
-#	Based on: Kevin Walsh's simple phone book
+#	Based on: Kevin Walsh's simple phone book, plus ideas from 
+#             Peter Watkins VolumeLock
 #
 #	----------------------------------------------------------------------
-#	8 bit output / input through i2c
+#	8 bit output through i2c
 #	----------------------------------------------------------------------
 #	Function:
 #
 #	- Each of the 8 I/Os has 6 modes, selectable in the I2C setup menu
-#	  -> (out) output:        switchable by the number buttons 1..8 on the remote
-#	                           from the I2C menu or
-#	                           when the client is turned off (needs Power.pm change)
-#	  -> (pow) linked output: same as output, but linked with the power of the
-#	                           client
-#	  -> (pls) timed output:  same as output, but turns off after a certain time
-#	  -> (pon) pulse output: when client is turned on
-#	  -> (pof) pulse output: when client is turned off
-#     -> (pop) pulse output; when clent is turned on or off
+#	  -> (out) output:    switchable by the number buttons 1..8 on the 
+#                         remote from the I2C menu or
+#	                      when the client is turned off 
+#                         (needs Power.pm change)
+#	  -> (pow) power:     same as output, but linked with the power of the
+#	                      client
+#	  -> (pls) short pulse (length is $pulseWidth seconds) 
+#	  -> (pon) short pulse when client is turned on
+#	  -> (pof) short pulse when client is turned off
+#     -> (pop) short pulse when clent is turned on or off
 #
 #	If used with a skin (Fishbone) that has power on/off possibilities,
 #	the amplifier can be turned on/off together with the client
@@ -40,7 +42,8 @@
 #	Pin 14			U8 Pin 6	Pin 7				SCL (Clock)
 #	Pin 15			U8 Pin 7	Pin 8				SDA (Data)
 #
-#	Pin 1,2,3		(*) Pin 2	Pin 1				A0, A1, A2 (part of slave address)
+#	Pin 1,2,3		(*) Pin 2	Pin 1				A0, A1, A2 
+#                                                   (part of slave address)
 #	Pin 8			(*) Pin 2	Pin 1				GND
 #
 #	Pin 16			(*) Pin 1	Pin 2				V+ (5V)
@@ -51,19 +54,21 @@
 #	(*) 6 pin connector (JTAG) next to PIC16F877
 #
 #	----------------------------------------------------------------------
-#	History:
+#	History (obsolete, see subversion now):
 #
 #   2006/11/29 v1.1 - Additions for mechanical flip-flop
 #	2005/02/28 v1.0 - Slimserver v6 ready
 #	2004/07/19 v0.9	- Get power on/off state through callback function
 #			- Pulse output when client powers on or off
 #			- Get buttons 1..8 when turned off through callback function
-#	2003/11/21 v0.8 - Adaption to Squeezebox (write only, since the Firmware does not support read yet)
+#	2003/11/21 v0.8 - Adaption to Squeezebox (write only, since the Firmware 
+#                     does not support read yet)
 #	2003/11/19 v0.7 - Adaption to SlimServer v5.0
-#	2003/07/27 v0.6 - Timed output can be turned off by pressing the button again
+#	2003/07/27 v0.6 - Timed output can be turned off by pressing the button 
+#                     again
 #	2003/07/20 v0.5 - Timed output option (output turns off after certain time
 #	2003/07/06 v0.4 - Some tests
-#	2003/05/22 v0.3 - Persistency for state and direction per client
+#	2003/05/22 v0.3 - Persistency for state and command per client
 #	2003/05/19 v0.2 - Use of channels (1..8) for output (array index 0..7)
 #	2003/05/17 v0.1	- Initial version
 #	----------------------------------------------------------------------
@@ -107,41 +112,64 @@ my $log = Slim::Utils::Log->addLogCategory({
 	'description'  => getDisplayName(),
 });
 
-# Our prefs
 my $prefs = preferences('plugin.i2c');
+my $serverPrefs = preferences('server');
 
 # ----------------------------------------------------------------------------
 # Global variables
 # ----------------------------------------------------------------------------
-my $autoTurnOffTime	= 3.0;	# in seconds
 my $pulseWidth	= 0.1;	# in seconds
 
-my @arrPages = ();	# 0 = Setup, 1 = State
-my %hshDisplayCurrent;	# Current display for a client
+my @Pages = ();	# 0 = Setup, 1 = State
+my %Display;	# Current display for a client
 
-my @arrPendingTimer = ();
+my %Timer;
 
-my @arrLinesSetup = ( "Setup   1   2   3   4   5   6   7   8", "");
-$arrPages[0] = \@arrLinesSetup;
+my @LinesSetup = ( "Setup   1   2   3   4   5   6   7   8", "");
+$Pages[0] = \@LinesSetup;
 
-my @arrLinesState = ( "State   1   2   3   4   5   6   7   8", "");
-$arrPages[1] = \@arrLinesState;
+my @LinesState = ( "State   1   2   3   4   5   6   7   8", "");
+$Pages[1] = \@LinesState;
 
-# 0 = Output: toggle
-# 1 = Input
-# 2 = Output: linked to power state
-# 3 = Output: timed 
-#     (turns off after a certain time)
-# 4 = Output: pulse when power on
-# 5 = Output: pulse when power off
-# 6 = Output: negated pulse when power 
-#     changes
-our @setupdesc = (["out", string("PLUGIN_I2C_OUT")],
-				  ["pow", string("PLUGIN_I2C_POWER")],
-				  ["pls", string("PLUGIN_I2C_PULSE")],
-				  ["pon", string("PLUGIN_I2C_POWERON")],
-				  ["pof", string("PLUGIN_I2C_POWEROFF")],
-				  ["pop", string("PLUGIN_I2C_POWERPULSE")]);
+# whether we're enabled (the callback remains in the function
+# stack after "disabling" the plugin, so we need to keep track of this)
+my $pluginEnabled = 0;
+
+my $originalVolumeCommand;
+
+# The Commands array; each item has four fields:
+#
+# - a short description (like 'out')
+#
+# - a long description for display on the Web UI
+#
+# - a function with arguments $client, $index and $state that is called to 
+#     change the state (through the remote)
+#   
+# - a function with arguments $client, $index, $state and $power that is
+#     called when the player is switched on or off
+
+our @Commands = (["out", string("PLUGIN_I2C_OUT"), \&toggleIO, undef],
+				 ["pow", string("PLUGIN_I2C_POWER"), \&toggleIO, \&toggleIO],
+				 ["pls", string("PLUGIN_I2C_PULSE"), \&pulseIO, undef],
+				 ["pon", string("PLUGIN_I2C_POWERON"), \&pulseIO, 
+				  sub {
+					 my ($client, $index, $state, $power) = @_;
+
+					 if ($power) {
+						 pulseIO($client, $index, $state);
+					 }
+				 }],
+				 ["pof", string("PLUGIN_I2C_POWEROFF"), \&pulseIO, 
+				  sub {
+					 my ($client, $index, $state, $power) = @_;
+					 
+					 if (!$power) {
+						 pulseIO($client, $index, $state);
+					 }
+				 }],
+				 ["pop", string("PLUGIN_I2C_POWERPULSE"), \&pulseIO, 
+				  \&pulseIO]);
 				 
 sub initPlugin {
 	my $class = shift;
@@ -153,7 +181,19 @@ sub initPlugin {
 	# Install callback to get client power state changes
 	# Slim::Control::Command::setExecuteCallback( \&commandCallback);
 	Slim::Control::Request::subscribe(\&commandCallback, 
-									  [['power', 'button']]);
+									  [['power', 'button', 'client']]);
+
+	if (!$pluginEnabled) {
+		$originalVolumeCommand = Slim::Control::Request::addDispatch(
+		    ['mixer', 'volume', '_newvalue'],
+	        [1, 0, 0, \&handleVolume]);
+	}
+
+	$pluginEnabled = 1;
+}
+
+sub shutdownPlugin {
+	$pluginEnabled = 0;
 }
 
 # ----------------------------------------------------------------------------
@@ -166,12 +206,12 @@ my %functions = (
 	},
 	'up' => sub {
 		my $client = shift;
-		$hshDisplayCurrent{$client} = 0;    # setup page
+		$Display{$client} = 0;    # setup page
 		$client->update();
 	},
 	'down' => sub {
 		my $client = shift;
-		$hshDisplayCurrent{$client} = 1;    # state page
+		$Display{$client} = 1;    # state page
 		$client->update();
 	},
 	'numberScroll' => sub  {
@@ -179,21 +219,28 @@ my %functions = (
 		my $client = shift;
 		my $button = shift;
 		my $digit = shift;
+		my $index = $digit - 1;
 
-		if( $hshDisplayCurrent{$client} == 1) {
+		if( $Display{$client} == 1) {
 			# State page
-			toggleIO( $client, $digit);
+			if( ( $digit >= 1) && ( $digit <= 8)) {
+				my @command = readIOCommand( $client);
+				my @output = readIOState( $client);
+
+				$Commands[$command[$index]][2]->($client, $index, 
+												   $output[$index]);
+			}
 		} else {
 			# Setup page
 			if( ( $digit >= 1) && ( $digit <= 8)) {
-				my $iIndex = $digit - 1;
+				my $index = $digit - 1;
 
-				my @direction = readIODirection( $client);
+				my @command = readIOCommand($client);
 
-				# Rotate through the different modes
-				$direction[$iIndex] = ($direction[$iIndex] + 1) % $#setupdesc;
+				# Rotate through the different command modes
+				$command[$index] = ($command[$index] + 1) % ($#Commands + 1);
 
-				writeIODirection( $client, @direction);
+				writeIOCommand( $client, @command);
 			}
 		}
 	}
@@ -205,29 +252,24 @@ my %functions = (
 # ----------------------------------------------------------------------------
 sub lines {
 	my $client = shift;
-	my $iIndex = 0;
 	my $szState = "        ";
 	my $szSetup = "        ";
 
-	my @output = readIOOutput( $client);
-	my @direction = readIODirection( $client);
+	my @output = readIOState( $client);
+	my @command = readIOCommand( $client);
 
-	for( $iIndex = 0; $iIndex <= 7; $iIndex++) {
-		if( $direction[$iIndex] == 1) {
-			$szSetup .= $setupdesc[$direction[$iIndex]][0] . " ";
+	for my $index (0 .. $#output) {
+		if( $output[$index] == 0) {
+			$szState .= "Off ";
 		} else {
-			if( $output[$iIndex] == 0) {
-				$szState .= "Off ";
-			} else {
-				$szState .= "On  ";
-			}
-			$szSetup .= $setupdesc[$direction[$iIndex]][0] . " ";
+			$szState .= "On  ";
 		}
+		$szSetup .= $Commands[$command[$index]][0] . " ";
 	}
-	$arrLinesState[1] = $szState;
-	$arrLinesSetup[1] = $szSetup;
+	$LinesState[1] = $szState;
+	$LinesSetup[1] = $szSetup;
 
-	return( { 'line' => $arrPages[$hshDisplayCurrent{$client} || 0]} );
+	return( { 'line' => $Pages[$Display{$client} || 0]} );
 }
 
 # ----------------------------------------------------------------------------
@@ -235,10 +277,10 @@ sub setMode {
 	my $class = shift;
 	my $client = shift;
 
-	readIOOutput($client);        # make sure the enties are generated
-	readIODirection($client);     # make sure the enties are generated 
+	readIOState($client);        # make sure the enties are generated
+	readIOCommand($client);     # make sure the enties are generated 
 
-	$hshDisplayCurrent{$client} = 1;
+	$Display{$client} = 1;
 
 	$client->lines( \&lines);
 	$client->update();
@@ -247,107 +289,62 @@ sub setMode {
 # ----------------------------------------------------------------------------
 # State persistency
 # ----------------------------------------------------------------------------
-sub writeIOOutput {
-	my $client = shift;
-	my @output = shift;
-	$prefs->client($client)->set(
-					"ioOutput",
-					$output[0] . " " .
-					$output[1] . " " .
-					$output[2] . " " .
-					$output[3] . " " .
-					$output[4] . " " .
-					$output[5] . " " .
-					$output[6] . " " .
-					$output[7]);
+sub writeIOState {
+	my ($client, @output) = @_;
+
+	my $szOutput = join(" ", @output);
+
+	$log->debug($client->id . " write: $szOutput");
+
+	$prefs->client($client)->set("ioOutput", $szOutput);
 }
 
 # ----------------------------------------------------------------------------
 # State persistency
 # ----------------------------------------------------------------------------
-sub readIOOutput {
+sub readIOState {
 	my $client = shift;
-	my $szOutput;    
 
-	$szOutput = $prefs->client($client)->get("ioOutput");
+	my $szOutput = $prefs->client($client)->get("ioOutput");
 	if( !defined( $szOutput)) {
-		writeIOOutput( $client, (0, 0, 0, 0, 0, 0, 0, 0));
+		writeIOState( $client, (0, 0, 0, 0, 0, 0, 0, 0));
 		$szOutput = $prefs->client($client)->get("ioOutput");
 	}
+	
+	$log->debug($client->id . " read: $szOutput");
+
 	return split( " ", $szOutput, 8);
 }
 
 # ----------------------------------------------------------------------------
-# Direction (mode) persistency
+# Command (mode) persistency
 # ----------------------------------------------------------------------------
-sub writeIODirection {
-	my $client = shift;
-	my @direction = shift;
+sub writeIOCommand {
+	my ($client, @command) = @_;
 
-	$prefs->client($client)->set(
-					"ioDirection",
-					$direction[0] . " " .
-					$direction[1] . " " .
-					$direction[2] . " " .
-					$direction[3] . " " .
-					$direction[4] . " " .
-					$direction[5] . " " .
-					$direction[6] . " " .
-					$direction[7]);
+	my $szCommand = join(' ', @command);
+
+	$log->debug($client->id . " write: $szCommand");
+
+	$prefs->client($client)->set("ioDirection", $szCommand);
 }
 
 # ----------------------------------------------------------------------------
-# Direction persistency
+# Command persistency
 # ----------------------------------------------------------------------------
-sub readIODirection {
+sub readIOCommand {
 	my $client = shift;
-	my $szDirection;
 
-	$szDirection =  $prefs->client($client)->get("ioDirection");
-	if( !defined( $szDirection)) {
-		### to do ### empty direction
-		writeIODirection( $client, (0, 0, 0, 0, 0, 0, 0, 0));
-		$szDirection =  $prefs->client($client)->get("ioDirection");
+	my $szCommand =  $prefs->client($client)->get("ioDirection");
+	if( !defined( $szCommand)) {
+		### to do ### empty command
+		writeIOCommand( $client, (0, 0, 0, 0, 0, 0, 0, 0));
+		$szCommand =  $prefs->client($client)->get("ioDirection");
 	}
-	return split( " ", $szDirection, 8);
-}
 
-# ----------------------------------------------------------------------------
-# Build an internal list of timer references
-# ----------------------------------------------------------------------------
-sub addPendingTimer {
-	my $timer = shift;
-	my $iNum = scalar( @arrPendingTimer);
-	splice( @arrPendingTimer, $iNum, 0, $timer);  # Add timer to end of list
-	$iNum = scalar( @arrPendingTimer);
+	$log->debug($client->id . " read: $szCommand");
 
-	$log->debug( "addPendingTimer() $iNum    $timer\n");
-}
-
-# ----------------------------------------------------------------------------
-sub removePendingTimer {
-	my $client = shift;
-	my $iButton = shift;
-	my $i = 0;
-	my $timer;
-	while( $timer = $arrPendingTimer[$i]) {
-		$log->debug( "$timer->{'client'}\n");
-		$log->debug( "$timer->{'when'}\n");
-		$log->debug( "$timer->{'subptr'}\n");
-		$log->debug( "$timer->{'args'}[0]\n");
-
-		# Find timer that belongs to specific client and I/O channel
-		if( ( $timer->{'client'} == $client) && ( $timer->{'args'}[0]) == $iButton) {
-			splice( @arrPendingTimer, $i, 1);  # Remove timer from list
-			last;
-		}
-		$i++;
-	}
-	my $iNum = scalar( @arrPendingTimer);
-
-	$log->debug( "removePendingTimer() $iNum\n");
-
-	return $timer;
+	return split( " ", $szCommand, 8);
 }
 
 # ----------------------------------------------------------------------------
@@ -362,6 +359,18 @@ sub getDisplayName {
 	return 'PLUGIN_I2C_NAME';
 }
 
+sub handleVolume {
+	my @args = @_;
+	my $request = $args[0];	
+	my $client = $request->client();
+	my $newvalue = $request->getParam('_newvalue');
+	my $volume = $serverPrefs->client($client)->get("volume");
+
+	$log->debug("volume: $newvalue current: $volume");
+
+	return &$originalVolumeCommand(@args);
+}
+
 # ----------------------------------------------------------------------------
 # Callback to get client power state changes
 # ----------------------------------------------------------------------------
@@ -371,28 +380,47 @@ sub commandCallback {
 
 	# Get power on and off commands
 	if( $request->getRequest(0) eq 'power') {
-		my $iPower = $client->power();
+		my $power = $client->power();
 
-		$log->debug("I2C::commandCallback() Power: $iPower\n");
+		$log->debug($client->id . " power: $power\n");
 
-# Direct call doesn't work
-#		handlePowerOnOff( $client, $iPower);
+		# Direct call doesn't work
+		# handlePowerOnOff( $client, $power);
 		Slim::Utils::Timers::setTimer( $client, Time::HiRes::time() + 1.0, 
-									   \&handlePowerOnOff_1, ( $iPower));
+									   \&handlePowerOnOff_1, ( $power));
 
 	# Get buttons 1..8 if player is turned off
 	} elsif( $request->getRequest(0) eq 'button') {
-		my $iPower = $client->power();
-		my $iButton = $request->getRequest(1) || '';
+		my $power = $client->power();
+		my $button = $request->getRequest(1) || '';
 
-		if( $iPower == 0) {
-			if( $iButton =~ m/^numberScroll_/) {
-				$iButton =~ s/numberScroll_//;
+		if( $power == 0) {
+			if( $button =~ m/^numberScroll_/) {
+				$button =~ s/numberScroll_//;
 
-				$log->debug("*** p: $iPower   b: $iButton\n");
+				my $index = $button - 1;
+				my @command = readIOCommand($client);
+				my @output = readIOState($client);
 
-				toggleIO( $client, $iButton);
+				$log->debug($client->id ." *** p: $power b: $button\n");
+
+				$Commands[$command[$index]][2]->($client, $index, 
+												 $output[$index]);
 			}
+		}
+	} elsif( $request->getRequest(0) eq 'client') {
+		my $cmd = $request->getRequest(1) || '';
+
+		$log->debug("client $cmd " . $client->id . " " . $client->name . "\n");
+
+		if ($cmd eq "reconnect") {
+			# Make sure IO is in sync with our state
+			switchIO($client);
+		}
+		elsif ($cmd eq "new") {
+			# Make sure preferences exist
+			readIOState($client);
+			readIOCommand($client);
 		}
 	}
 }
@@ -408,135 +436,94 @@ sub handlePowerOnOff_1 {
 # ----------------------------------------------------------------------------
 sub handlePowerOnOff {
 	my $client = shift;
-	my $bOn = shift;
+	my $power = shift;
 
-	$log->debug( "I2C::handlePowerSwitch() on: $bOn\n");
+	$log->debug($client->id . " power: $power\n");
 
-	my @direction = readIODirection( $client);  
-	for( my $iIndex = 0; $iIndex <= 7; $iIndex++) {
-		if( $direction[$iIndex] == 2) {
-			if( $bOn) {
-				switchIO( $client, $iIndex + 1, 1);  # Channel 1, on
-			} else {
-				switchIO( $client, $iIndex + 1, 0);  # Channel 1, off
-			}
-		} elsif( ( $direction[$iIndex] == 4) && ( $bOn == 1)) {
-			timedIO( $client, $iIndex + 1);
-		} elsif( ( $direction[$iIndex] == 5) && ( $bOn == 0)) {
-			timedIO( $client, $iIndex + 1);
-		} elsif( $direction[$iIndex] == 6) {
-			switchIO( $client, $iIndex + 1, 1);  # on
-			my $timer = Slim::Utils::Timers::setTimer( $client, 
-													   Time::HiRes::time()
-													   + $pulseWidth, 
-													   \&timedIO_IPO, 
-													   $iIndex + 1);
-			addPendingTimer( $timer);
+	my @command = readIOCommand( $client);
+	my @output = readIOState($client);
+
+	for my $i (0 .. $#command) {
+		if (defined $Commands[$command[$i]][3]) {
+			$Commands[$command[$i]][3]->($client, $i, $output[$i], $power);
 		}
 	}
 }
 
 # ----------------------------------------------------------------------------
 sub toggleIO {
-	my $client = shift;
-	my $iButton = shift;
+	my ($client, $index, $state) = @_;
 
-	$log->debug( "I2C::toggleIO() button: $iButton\n");
+	$log->debug($client->id . " button: $index\n");
 
-	if( ( $iButton < 1) || ( $iButton > 8)) {
+	if( ($index < 0) || ($index > 7)) {
 		return;
 	}
 
-	my $iIndex = $iButton - 1;
-
-	my @direction = readIODirection( $client);  
-	if( $direction[$iIndex] == 1) {		# Input
-		return;
-	} elsif( $direction[$iIndex] == 3) {		# Output: timed
-		timedIO( $client, $iButton);
-	} elsif( $direction[$iIndex] == 4) {		# Output: pulse on
-		timedIO( $client, $iButton);
-	} elsif( $direction[$iIndex] == 5) {		# Output: pulse off
-		timedIO( $client, $iButton);
-	} elsif( $direction[$iIndex] == 6) {		# IPO
-		switchIO( $client, $iButton, 1);        # on
-		my $timer = Slim::Utils::Timers::setTimer( $client, Time::HiRes::time()
-												   + $pulseWidth, 
-												   \&timedIO_IPO, $iButton);
-		addPendingTimer( $timer);
-	} elsif( $direction[$iIndex] == 0) {		# Output: toggle
-		my @output = readIOOutput( $client);
-		if( $output[$iIndex] == 0) {
-			switchIO( $client, $iButton, 1);
-		} else {
-			switchIO( $client, $iButton, 0);
-		}
-	}
-}
-
-# ----------------------------------------------------------------------------
-sub timedIO {
-	my $client = shift;
-	my $iButton = shift;
-	my $iIndex = $iButton - 1;
-
-	my @output = readIOOutput( $client);
-
-	$log->debug( "I2C::timedIO() button: $iButton state: $output[$iIndex]\n");
-	if( $output[$iIndex] == 0) {
-		switchIO( $client, $iButton, 1);
-		my $timer = Slim::Utils::Timers::setTimer( $client, Time::HiRes::time()
-												   + $autoTurnOffTime, 
-												   \&timedIO_Part2, 
-												   ( $iButton));
-		# Add timer to our intern list of pending timers for later reference
-		addPendingTimer( $timer);  
+	if( $state == 0) {
+		switchIO( $client, $index, 1);
 	} else {
-		# Remove timer from our internal list
-		my $timer = removePendingTimer( $client, $iButton);  
-		if( defined( $timer)) {
-			# Remove the timer from global list
-			Slim::Utils::Timers::killSpecific( $timer);  
-		  }
-		switchIO( $client, $iButton, 0);
+		switchIO( $client, $index, 0);
 	}
 }
 
 # ----------------------------------------------------------------------------
-sub timedIO_Part2 {
+sub pulseIO {
 	my $client = shift;
-	my $iButton = shift;
+	my $index = shift;
+	my $length = shift;
 
-	$log->debug( "I2C::timedIO_Part2() button: $iButton\n");
+	$log->debug($client->id . " index: $index\n");
 
-	# Remove timer from our internal list
-	removePendingTimer( $client, $iButton);
-	switchIO( $client, $iButton, 0);
+	if( ($index < 0) || ($index > 7)) {
+		return;
+	}
+
+	if (!defined $length) {
+		$length = $pulseWidth;
+	}
+
+	my $ti = $Timer{$client}{$index};
+
+	if ($ti) {
+		# Kill the pending timer
+		Slim::Utils::Timers::killSpecific($ti);
+	}
+
+	switchIO( $client, $index, 1);
+	
+	$Timer{$client}{$index} = Slim::Utils::Timers::setTimer(
+        $client, Time::HiRes::time() + $length, \&pulseIO2, ($index));
 }
 
 # ----------------------------------------------------------------------------
-sub timedIO_IPO {
+sub pulseIO2 {
 	my $client = shift;
-	my $iButton = shift;
+	my $index = shift;
 
-	$log->debug( "I2C::timedIO_IPO() button: $iButton\n");
+	$log->debug($client->id . " index: $index\n");
 
-	removePendingTimer( $client, $iButton);  # Remove timer from our intern list
-	switchIO( $client, $iButton, 0);
+	# Remove timer from our internal hash
+	delete $Timer{$client}{$index};
+	switchIO( $client, $index, 0);
 }
 
 # ----------------------------------------------------------------------------
 sub switchIO {
 	my $client = shift;
-	my $iChannel = shift;  # 1..8
-	my $bState = shift;
+	my $channel = shift;  # 0..7
+	my $state = shift;
 
-	$log->debug( "I2C::switchIO() channel: $iChannel state: $bState\n");
+	$log->debug($client->id . "index: $channel state: $state\n");
 
-	my @output = readIOOutput( $client);
-	my @direction = readIODirection( $client);
+	my @output = readIOState( $client);
+	my @command = readIOCommand( $client);
 
-	$output[$iChannel - 1] = $bState;
+	# switchIO can be called with just the client argument to bring the
+	# hardware in sync with our perception of reality
+	if ((defined $state) && (defined $channel)) {
+		$output[$channel] = $state;
+	}
 
 	my $byValue = 0xff;
 
@@ -549,17 +536,9 @@ sub switchIO {
 	if( $output[1] == 1) { $byValue = $byValue & 0xfd;}
 	if( $output[0] == 1) { $byValue = $byValue & 0xfe;}
 
-	if( $direction[7] == 1) { $byValue = $byValue | 0x80;}
-	if( $direction[6] == 1) { $byValue = $byValue | 0x40;}
-	if( $direction[5] == 1) { $byValue = $byValue | 0x20;}
-	if( $direction[4] == 1) { $byValue = $byValue | 0x10;}
-	if( $direction[3] == 1) { $byValue = $byValue | 0x08;}
-	if( $direction[2] == 1) { $byValue = $byValue | 0x04;}
-	if( $direction[1] == 1) { $byValue = $byValue | 0x02;}
-	if( $direction[0] == 1) { $byValue = $byValue | 0x01;}
-
 	my $szValue = sprintf( "%02x", $byValue);
 
+	$log->debug($client->id . " ");
 	$log->debug( $output[7]);
 	$log->debug( $output[6]);
 	$log->debug( $output[5]);
@@ -601,40 +580,7 @@ sub switchIO {
 
 	$client->i2c( $i2c);
 
-	writeIOOutput( $client, @output);
-
-
-### More old stuff
-#    if( $bState == 1)  # on
-#    {
-#        # MAX 7310 address: 0x11
-##       my $i2c = "s 22 03 00 ps 22 01 fb p";
-#
-#        # PCF 8574N address: 0x20
-#        my $i2c = "s 40 fe p";
-#
-#        # pack hex values and add write, ack commands
-#        $i2c =~ s/ ?([\dA-Fa-f][\dA-Fa-f]) ?/'w'.pack ("C", hex ($1))/eg;
-#        $i2c = '2                 ' . $i2c;
-#        Slim::Hardware::i2c::send( $client, $i2c);
-##        Slim::Networking::Protocol::sendClient( $client, $i2c);
-#    }
-#    else  # off
-#    {
-#        # MAX 7310 address: 0x11
-##       my $i2c = "s 22 03 00 ps 22 01 ff p";
-#
-#        # PCF 8574N address: 0x20
-#        my $i2c = "s 40 ff p";
-#
-#        # pack hex values and add write, ack commands
-#        $i2c =~ s/ ?([\dA-Fa-f][\dA-Fa-f]) ?/'w'.pack ("C", hex ($1))/eg;
-#        $i2c = '2                 ' . $i2c;
-#        Slim::Hardware::i2c::send( $client, $i2c);
-##        Slim::Networking::Protocol::sendClient( $client, $i2c);
-#    }
-### End more old stuff
-
+	writeIOState($client, @output);
 }
 
 # *************************************************************
@@ -665,44 +611,3 @@ sub readIO
 }
 
 1;
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------
-## Preparation for input polling
-#my $interval = 1; # check every x seconds
-#
-#setTimer();
-#
-# ----------------------------------------------------------------------------
-#sub setTimer
-#{
-#  Slim::Utils::Timers::setTimer( 0, Time::HiRes::time() + $interval, \&checkIO);
-#}
-#
-# ----------------------------------------------------------------------------
-#sub checkIO
-#{
-#	foreach my $client ( Slim::Player::Client::clients())
-#	{
-#	}
-#	setTimer();
-#}
-
-# ----------------------------------------------------------------------------
-#	$powerSwitchMode = Slim::Utils::Prefs::clientGet( $client, "powerSwitchMode");
-#	if( !defined( $powerSwitchMode))
-#	{
-#		$powerSwitchMode = 0;
-#	}
-#	Slim::Utils::Prefs::clientSet( $client, "powerSwitchMode", 0);
-#	my $power1Switch = Slim::Utils::Prefs::clientGet( $client, "power1Switch");
-#	if( !defined( $power1Switch))
-#	{
-#		$power1Switch = 0;
-#	}
-#	Slim::Utils::Prefs::clientSet( $client, "power1Switch", 1);
-

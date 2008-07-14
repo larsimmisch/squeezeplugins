@@ -2,13 +2,13 @@
 
 	[% WRAPPER setting title="PLUGIN_I2C_SETUP" desc="PLUGIN_I2C_DESC" %]
 
-	    [% FOR dir IN prefs.direction %]
+	    [% FOR cmd IN prefs.command %]
 			<p>
 	        IO [% loop.index + 1 %]: <select name="io[% loop.index %]"> 
 
 		    [% FOR desc IN prefs.desc %]
 			    <option value="[% loop.index %]" 
-				    [% IF loop.index == dir %]selected="selected"[% END %]> 
+				    [% IF loop.index == cmd %]selected="selected"[% END %]> 
 					[% desc %] 
 				</option>
 			[% END %]

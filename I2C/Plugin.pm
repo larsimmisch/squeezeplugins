@@ -390,7 +390,7 @@ sub volumeFunction {
 			if ($tt{$abbr} eq $cmd)
 			{
 				$handled = 1;
-				pulseIO($client, $index);
+				pulseIO($client, $index, 0.2);
 			}
 		}
 	}

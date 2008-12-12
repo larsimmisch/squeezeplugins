@@ -119,6 +119,7 @@ my $serverPrefs = preferences('server');
 # Global variables
 # ----------------------------------------------------------------------------
 my $pulseWidth	= 0.1;	# in seconds
+my $volumePulseWidth = 0.2;
 
 my @Pages = ();	# 0 = Setup, 1 = State
 my %Display;	# Current display for a client
@@ -152,8 +153,8 @@ my $originalVolumeFunction;
 # Volume changes are handled outside of this table
 
 our @Commands = (["out", string("PLUGIN_I2C_OUT"), \&toggleIO, undef],
-				 ["pow", string("PLUGIN_I2C_POWER"), \&toggleIO, \&toggleIO],
 				 ["pls", string("PLUGIN_I2C_PULSE"), \&pulseIO, undef],
+				 ["pow", string("PLUGIN_I2C_POWER"), \&toggleIO, \&toggleIO],
 				 ["pon", string("PLUGIN_I2C_POWERON"), \&pulseIO, 
 				  sub {
 					 my ($client, $index, $state, $power) = @_;
@@ -171,7 +172,11 @@ our @Commands = (["out", string("PLUGIN_I2C_OUT"), \&toggleIO, undef],
 					 }
 				 }],
 				 ["pop", string("PLUGIN_I2C_POWERPULSE"), \&pulseIO, 
-				  \&pulseIO],
+				  sub {
+					  my ($client, $index, $state, $power) = @_;
+					  
+					  pulseIO($client, $index, $state);
+				  }],
 				 ["v-", string("PLUGIN_I2C_VOLUMEDEC"), \&pulseIO, undef],
 				 ["v+", string("PLUGIN_I2C_VOLUMEINC"), \&pulseIO, undef]);
 
@@ -237,7 +242,7 @@ my %functions = (
 				my @output = readIOState( $client);
 
 				$Commands[$command[$index]][2]->($client, $index, 
-												   $output[$index]);
+												 $output[$index]);
 			}
 		} else {
 			# Setup page
@@ -390,7 +395,7 @@ sub volumeFunction {
 			if ($tt{$abbr} eq $cmd)
 			{
 				$handled = 1;
-				pulseIO($client, $index, 0.2);
+				pulseIO($client, $index, 0, $volumePulseWidth);
 			}
 		}
 	}
@@ -501,9 +506,10 @@ sub toggleIO {
 sub pulseIO {
 	my $client = shift;
 	my $index = shift;
+	my $state = shift;
 	my $length = shift;
 
-	$log->debug($client->id . " index: $index\n");
+	$log->debug($client->id . " index: $index, state: $state, length: $length\n");
 
 	if( ($index < 0) || ($index > 7)) {
 		return;
@@ -520,7 +526,7 @@ sub pulseIO {
 		Slim::Utils::Timers::killSpecific($ti);
 	}
 
-	switchIO( $client, $index, 1);
+	switchIO($client, $index, 1);
 	
 	$Timer{$client}{$index} = Slim::Utils::Timers::setTimer(
         $client, Time::HiRes::time() + $length, \&pulseIO2, ($index));

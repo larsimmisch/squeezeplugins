@@ -135,7 +135,7 @@ $Pages[1] = \@LinesState;
 # stack after "disabling" the plugin, so we need to keep track of this)
 my $pluginEnabled = 0;
 
-my $originalVolumeCommand;
+my $originalVolumeFunction;
 
 # The Commands array; each item has four fields:
 #
@@ -148,6 +148,8 @@ my $originalVolumeCommand;
 #   
 # - a function with arguments $client, $index, $state and $power that is
 #     called when the player is switched on or off
+#
+# Volume changes are handled outside of this table
 
 our @Commands = (["out", string("PLUGIN_I2C_OUT"), \&toggleIO, undef],
 				 ["pow", string("PLUGIN_I2C_POWER"), \&toggleIO, \&toggleIO],
@@ -169,7 +171,10 @@ our @Commands = (["out", string("PLUGIN_I2C_OUT"), \&toggleIO, undef],
 					 }
 				 }],
 				 ["pop", string("PLUGIN_I2C_POWERPULSE"), \&pulseIO, 
-				  \&pulseIO]);
+				  \&pulseIO],
+				 ["v-", string("PLUGIN_I2C_VOLUMEDEC"), \&pulseIO, undef],
+				 ["v+", string("PLUGIN_I2C_VOLUMEINC"), \&pulseIO, undef]);
+
 				 
 sub initPlugin {
 	my $class = shift;
@@ -178,15 +183,19 @@ sub initPlugin {
 
 	Plugins::I2C::PlayerSettings->new;
 
-	# Install callback to get client power state changes
-	# Slim::Control::Command::setExecuteCallback( \&commandCallback);
-	Slim::Control::Request::subscribe(\&commandCallback, 
-									  [['power', 'button', 'client']]);
+	if (!$pluginEnabled) 
+	{
+		$originalVolumeFunction = $Slim::Buttons::Common::functions{'volume'};
 
-	if (!$pluginEnabled) {
-		$originalVolumeCommand = Slim::Control::Request::addDispatch(
-		    ['mixer', 'volume', '_newvalue'],
-	        [1, 0, 0, \&handleVolume]);
+		$log->debug("$originalVolumeFunction");
+		
+		Slim::Buttons::Common::setFunction('volume', \&volumeFunction);
+
+		# Install callback to get client power state changes
+		# Slim::Control::Command::setExecuteCallback( \&commandCallback);
+		 Slim::Control::Request::subscribe(\&commandCallback, 
+										  [['power', 'button', 'client']]);
+
 	}
 
 	$pluginEnabled = 1;
@@ -311,7 +320,7 @@ sub readIOState {
 		$szOutput = $prefs->client($client)->get("ioOutput");
 	}
 	
-	$log->debug($client->id . " read: $szOutput");
+	# $log->debug($client->id . " read: $szOutput");
 
 	return split( " ", $szOutput, 8);
 }
@@ -342,7 +351,7 @@ sub readIOCommand {
 		$szCommand =  $prefs->client($client)->get("ioDirection");
 	}
 
-	$log->debug($client->id . " read: $szCommand");
+	# $log->debug($client->id . " read: $szCommand");
 
 	return split( " ", $szCommand, 8);
 }
@@ -359,16 +368,37 @@ sub getDisplayName {
 	return 'PLUGIN_I2C_NAME';
 }
 
-sub handleVolume {
-	my @args = @_;
-	my $request = $args[0];	
-	my $client = $request->client();
-	my $newvalue = $request->getParam('_newvalue');
-	my $volume = $serverPrefs->client($client)->get("volume");
+sub volumeFunction {
+	my $client = shift;
+	my $button = shift;
+	my $last = $client->lastirbutton();
+	# cut off the potential .repeat
+	my $abbr = (split(/\./, $last, 2))[0];
+	my $handled = 0;
+	my %tt = ("volup" => "v+", "voldown" => "v-");
 
-	$log->debug("volume: $newvalue current: $volume");
+	$log->debug("$last $abbr");
 
-	return &$originalVolumeCommand(@args);
+	my @command = readIOCommand($client);
+
+	if ($tt{$abbr})
+	{
+		for my $index (0 .. $#command) 
+		{
+			my $cmd = $Commands[$command[$index]][0];
+
+			if ($tt{$abbr} eq $cmd)
+			{
+				$handled = 1;
+				pulseIO($client, $index);
+			}
+		}
+	}
+
+	if (!$handled)
+	{
+		&$originalVolumeFunction($client);
+	}
 }
 
 # ----------------------------------------------------------------------------
@@ -386,7 +416,7 @@ sub commandCallback {
 
 		# Direct call doesn't work
 		# handlePowerOnOff( $client, $power);
-		Slim::Utils::Timers::setTimer( $client, Time::HiRes::time() + 1.0, 
+		Slim::Utils::Timers::setTimer( $client, Time::HiRes::time() + 0.1, 
 									   \&handlePowerOnOff_1, ( $power));
 
 	# Get buttons 1..8 if player is turned off
@@ -538,16 +568,7 @@ sub switchIO {
 
 	my $szValue = sprintf( "%02x", $byValue);
 
-	$log->debug($client->id . " ");
-	$log->debug( $output[7]);
-	$log->debug( $output[6]);
-	$log->debug( $output[5]);
-	$log->debug( $output[4]);
-	$log->debug( $output[3]);
-	$log->debug( $output[2]);
-	$log->debug( $output[1]);
-	$log->debug( $output[0]);
-	$log->debug( " $szValue\n");
+	$log->debug($client->id . " " . join(" ", @output) . " $szValue\n");
 
 	my $i2c = undef;
 

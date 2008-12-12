@@ -49,3 +49,11 @@ PLUGIN_I2C_POWEROFF
 PLUGIN_I2C_POWERPULSE
 	DE	Puls beim Ein- und Ausschalten
 	EN	Pulse on power on/off
+
+PLUGIN_I2C_VOLUMEINC
+	EN	Pulse when volume is increased
+	DE	Puls wenn es lauter werden soll
+
+PLUGIN_I2C_VOLUMEDEC
+	EN	Pulse when volume is decreased
+	DE	Puls wenn es leiser werden soll

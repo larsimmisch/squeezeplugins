@@ -57,3 +57,12 @@ PLUGIN_I2C_VOLUMEINC
 PLUGIN_I2C_VOLUMEDEC
 	EN	Pulse when volume is decreased
 	DE	Puls wenn es leiser werden soll
+
+PLUGIN_I2C_VOLUP
+	EN	Volume up
+	DE	Lauter
+
+PLUGIN_I2C_VOLDOWN
+	EN	Volume down
+	DE	Leiser
+

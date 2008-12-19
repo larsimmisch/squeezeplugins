@@ -380,7 +380,8 @@ sub volumeFunction {
 	# cut off the potential .repeat
 	my $abbr = (split(/\./, $last, 2))[0];
 	my $handled = 0;
-	my %tt = ("volup" => "v+", "voldown" => "v-");
+	my %tt = ("volup" => ["v+", string('PLUGIN_I2C_VOLUP')], 
+			  "voldown" => ["v-", string('PLUGIN_I2C_VOLDOWN')]);
 
 	$log->debug("$last $abbr");
 
@@ -392,10 +393,13 @@ sub volumeFunction {
 		{
 			my $cmd = $Commands[$command[$index]][0];
 
-			if ($tt{$abbr} eq $cmd)
+			if ($tt{$abbr}[0] eq $cmd)
 			{
 				$handled = 1;
 				pulseIO($client, $index, 0, $volumePulseWidth);
+
+				$client->showBriefly({line1 => $tt{$abbr}[1],
+									  duration => $volumePulseWidth});
 			}
 		}
 	}

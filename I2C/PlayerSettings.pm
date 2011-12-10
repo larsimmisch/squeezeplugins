@@ -24,7 +24,7 @@ sub needsClient {
 }
 
 sub page {
-	return Slim::Web::HTTP::protectURI('plugins/I2C/settings/player.html');
+	return Slim::Web::HTTP::CSRF->protectURI('plugins/I2C/settings/player.html');
 }
 
 sub handler {

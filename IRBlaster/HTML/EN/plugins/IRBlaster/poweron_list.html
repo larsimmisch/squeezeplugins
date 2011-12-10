@@ -1,0 +1,65 @@
+	<tr>
+	<td>
+		[% IF id == 0 %]
+			<b>[% 'PLUGIN_IRBLASTER_POWER_ON' | string %]</b>
+		[% ELSE %]
+			&nbsp;
+		[% END %]
+	</td>
+	<td>
+		<input type="button" name="testPowerOn_[% id %]" value="Test" onClick="settingsForm.mode.value='testPowerOn_[% id %]';submit();">
+	</td>
+	<td>
+		<select name="selRemPowerOn_[% id %]" onChange="settingsForm.mode.value='refresh';submit();">
+
+		<option value="-1" [% IF "-1" == poweron_remote %]selected[% END %]>[% 'PLUGIN_IRBLASTER_DISABLED' | string %]</option>
+		[% FOREACH remote = remotes %]
+			<option value="[% remote.key %]" [% IF remote.key == poweron_remote %]selected[% END %]>[% remote.key %]</option>
+		[% END %]
+
+		</select>
+	</td>
+	<td>
+		<select name="selCmdPowerOn_[% id %]" onChange="settingsForm.mode.value='refresh';submit();">
+			
+		[% FOREACH command = remotes.$poweron_remote.CODES %]
+			<option value="[% command.key %]" [% IF command.key == poweron_command %]selected[% END %]>[% command.key %]</option>
+		[% END %]
+
+		</select>
+	</td>
+	<td>	
+		<select name="selDelayPowerOn_[% id %]" onChange="settingsForm.mode.value='refresh';submit();">
+			<option value="0" [% IF poweron_delay == 0 %]selected[% END %]>0</option>
+			<option value="0.25" [% IF poweron_delay == 0.25 %]selected[% END %]>0.25</option>
+			<option value="0.5" [% IF poweron_delay == 0.5 %]selected[% END %]>0.5</option>
+			<option value="0.75" [% IF poweron_delay == 0.75 %]selected[% END %]>0.75</option>
+			<option value="1" [% IF poweron_delay == 1 %]selected[% END %]>1</option>
+			<option value="2" [% IF poweron_delay == 2 %]selected[% END %]>2</option>
+			<option value="5" [% IF poweron_delay == 5 %]selected[% END %]>5</option>
+			<option value="10" [% IF poweron_delay == 10 %]selected[% END %]>10</option>
+		</select>
+	</td>
+	<td>
+		[% IF count < max %]
+		[% IF id < max - 1 %]
+		<a href="javascript:void(0);" onClick="settingsForm.mode.value='addPowerOn_[% id %]';settingsForm.submit();">
+		[+]
+		</a>
+		[% IF id == count - 1 %]
+			<br>
+			<a href="javascript:void(0);" onClick="settingsForm.mode.value='addPowerOn_[% id + 1 %]';settingsForm.submit();">
+			[+]
+			</a>
+		[% END %]
+		[% END %]
+		[% END %]
+	</td>
+	<td>
+		[% IF (id > 0) || (count > 1) %]
+		<a href="javascript:void(0);" onClick="settingsForm.mode.value='delPowerOn_[% id %]';settingsForm.submit();">
+		[-]
+		</a>
+		[% END %]
+	</td>
+	</tr>

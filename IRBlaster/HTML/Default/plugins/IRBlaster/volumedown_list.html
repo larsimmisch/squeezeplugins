@@ -1,0 +1,59 @@
+	<tr>
+	<td>
+		[% IF id == 0 %]
+			<b>[% 'PLUGIN_IRBLASTER_VOLUME_DOWN' | string %]</b>
+		[% ELSE %]
+			&nbsp;
+		[% END %]
+	</td>
+	<td>
+		<input type="button" name="testVolumeDown_[% id %]" value="Test" onClick="settingsForm.mode.value='testVolumeDown_[% id %]';submit();">
+	</td>
+	<td>
+		<select name="selRemVolumeDown_[% id %]" onChange="settingsForm.mode.value='refresh';submit();">
+
+		<option value="-1" [% IF "-1" == volumedown_remote %]selected[% END %]>[% 'PLUGIN_IRBLASTER_DISABLED' | string %]</option>
+		[% FOREACH remote = remotes %]
+			<option value="[% remote.key %]" [% IF remote.key == volumedown_remote %]selected[% END %]>[% remote.key %]</option>
+		[% END %]
+
+		</select>
+	</td>
+	<td>
+		<select name="selCmdVolumeDown_[% id %]" onChange="settingsForm.mode.value='refresh';submit();">
+			
+		[% FOREACH command = remotes.$volumedown_remote.CODES %]
+			<option value="[% command.key %]" [% IF command.key == volumedown_command %]selected[% END %]>[% command.key %]</option>
+		[% END %]
+
+		</select>
+	</td>
+	<td>	
+		<select name="selDelayVolumeDown_[% id %]" onChange="settingsForm.mode.value='refresh';submit();">
+			<option value="0" [% IF volumedown_delay == 0 %]selected[% END %]>0</option>
+			<option value="0.25" [% IF volumedown_delay == 0.25 %]selected[% END %]>0.25</option>
+			<option value="0.5" [% IF volumedown_delay == 0.5 %]selected[% END %]>0.5</option>
+			<option value="0.75" [% IF volumedown_delay == 0.75 %]selected[% END %]>0.75</option>
+			<option value="1" [% IF volumedown_delay == 1 %]selected[% END %]>1</option>
+			<option value="2" [% IF volumedown_delay == 2 %]selected[% END %]>2</option>
+			<option value="5" [% IF volumedown_delay == 5 %]selected[% END %]>5</option>
+			<option value="10" [% IF volumedown_delay == 10 %]selected[% END %]>10</option>
+		</select>
+	</td>
+	<td>
+		[% IF count < max %]
+		[% IF id < max - 1 %]
+		<img src="/html/images/b_add.gif" title="[% 'PLUGIN_IRBLASTER_ADD_BEFORE' | string %]" onClick="settingsForm.mode.value='addVolumeDown_[% id %]';settingsForm.submit();">
+		[% IF id == count - 1 %]
+			<br>
+			<img src="/html/images/b_add.gif" title="[% 'PLUGIN_IRBLASTER_ADD_AFTER' | string %]" onClick="settingsForm.mode.value='addVolumeDown_[% id + 1 %]';settingsForm.submit();">
+		[% END %]
+		[% END %]
+		[% END %]
+	</td>
+	<td>
+		[% IF (id > 0) || (count > 1) %]
+		<img src="/html/images/b_delete.gif" title="Delete" onClick="settingsForm.mode.value='delVolumeDown_[% id %]';settingsForm.submit();">
+		[% END %]
+	</td>
+	</tr>

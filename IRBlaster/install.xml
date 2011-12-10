@@ -1,0 +1,18 @@
+<?xml version='1.0' standalone='yes'?>
+<extension>
+  <name>PLUGIN_IRBLASTER_MODULE_NAME</name>
+  <module>Plugins::IRBlaster::Plugin</module>
+  <creator>GwenDesign/Lars Immisch</creator>
+  <defaultState>enabled</defaultState>
+  <description>PLUGIN_IRBLASTER_MODULE_DESC</description>
+  <email>lars@ibp.de</email>
+  <homepageURL>http://ibp.de/projects/squeezeplugins/</homepageURL>
+  <id>04DB1953-73EE-437A-8A05-F90B27CAFDB8</id>
+  <targetApplication>
+  	<id>SqueezeCenter</id>
+    <maxVersion>7.*</maxVersion>
+    <minVersion>7.4</minVersion>
+  </targetApplication>
+  <type>2</type>
+  <version>5.6.1</version>
+</extension>

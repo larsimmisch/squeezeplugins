@@ -1,0 +1,213 @@
+[% PROCESS settings/header.html %]
+
+
+[% SET irblaster_supported = 0 %]
+[% PERL %]
+my $player=Slim::Player::Client::getClient($stash->{player});
+if( defined( $player)) {
+	if( $player->isa( "Slim::Player::Squeezebox2")) {
+		$stash->{irblaster_supported} = 1;
+	} else {
+		print '<br><br><font color="red">';
+		print '[% 'PLUGIN_IRBLASTER_PLAYER_NOT_SUPPORTED' | string %]';
+		print '<br><br></font>';
+	}
+}
+[% END %]
+[% IF irblaster_supported == 1 %]
+
+
+		<!-- start plugins output -->
+
+<div class="settingSection">
+	<div class="prefHead">[% 'PLUGIN_IRBLASTER_SETUP' | string | upper %]</div>
+	<div class="prefDesc">[% 'PLUGIN_IRBLASTER_DESC' | string %]</div>
+</div>
+
+	<input type="hidden" name="playername" value="[% playername %]">
+	<input type="hidden" name="mode" value="">
+	<table cellspacing="0" width="100%" border="0">
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		&nbsp;
+	</td>
+	</tr>
+
+	<!-- *** Header *** --->
+	<tr>
+	<td width="18%">
+		<b>[% 'PLUGIN_IRBLASTER_ACTION' | string %]</b>
+	</td>
+	<td width="10%">
+		&nbsp;
+	</td>
+	<td width="27%">
+		<b>[% 'PLUGIN_IRBLASTER_DEVICE' | string %]</b>
+	</td>
+	<td width="27%">
+		<b>[% 'PLUGIN_IRBLASTER_BUTTON' | string %]</b>
+	</td>
+	<td width="12%">
+		<b>[% 'PLUGIN_IRBLASTER_DELAY' | string %]</b>
+	</td>
+	<td width="3%">
+		&nbsp;
+	</td>
+	<td width="3%">
+		&nbsp;
+	</td>
+	</tr>
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Power On *** -->
+	[% poweron_list %]
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Power Off *** -->
+	[% poweroff_list %]
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Volume Up *** -->
+	[% volumeup_list %]
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Volume Down *** -->
+	[% volumedown_list %]
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** IR Blaster fixed volume *** -->
+	<tr>
+	<td colspan="7">
+		<b>[% 'PLUGIN_IRBLASTER_FIXED_VOLUME' | string %]</b>
+		&nbsp;&nbsp;
+
+		<select name="selFixedVolume" onChange="settingsForm.mode.value='fixedvolume';submit();" [% IF selFixedVolumeDisabled == 1 %]disabled[% END %]>
+			<option value="20" [% IF selFixedVolume == 20 %]selected[% END %]>20</option>
+			<option value="40" [% IF selFixedVolume == 40 %]selected[% END %]>40</option>
+			<option value="60" [% IF selFixedVolume == 60 %]selected[% END %]>60</option>
+			<option value="80" [% IF selFixedVolume == 80 %]selected[% END %]>80</option>
+			<option value="100" [% IF selFixedVolume == 100 %]selected[% END %]>100</option>
+		</select>
+
+		&nbsp;&nbsp;
+		[% 'PLUGIN_IRBLASTER_FIXED_VOLUME_WARNING' | string %]
+
+	</td>
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Conf-file-path *** -->
+	<tr>
+	<td colspan="7">
+		<b>[% 'PLUGIN_IRBLASTER_CONFFILEPATH' | string %]</b>
+		<input type="button" value="[% 'PLUGIN_IRBLASTER_RELOAD' | string %]" onClick="settingsForm.mode.value='reload';submit();">
+		<input type="text" name="conffilepath" size="50" value="[% conffilepath %]">
+	</td>
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** IR Repeater *** -->
+	<tr>
+	<td colspan="7">
+		<b>[% 'PLUGIN_IRBLASTER_REPEATER' | string %]</b>
+		&nbsp;&nbsp;
+		<input [% IF "on" == irrepeater %]checked[% END %] type="checkbox" name="irrepeater" value="on" onClick="settingsForm.mode.value='repeater';submit();">
+	</td>
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Hint *** -->
+	<tr>
+	<td colspan="7">
+		[% 'PLUGIN_IRBLASTER_HINT' | string %]
+	</td>
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Learning wizard *** -->
+	<tr>
+	<td colspan="7">
+		[% 'PLUGIN_IRBLASTER_CLICK_HERE' | string %] <a
+		href="javascript:void()" onclick="chooseSettings(-1,'PLUGIN_IRBLASTER_IR_LEARNING_WIZARD')">[% 'PLUGIN_IRBLASTER_IR_LEARNING_WIZARD' | string %]</a>
+	</td>
+	</tr>
+	
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="7">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Debug *** -->
+	<tr>
+	<td colspan="7">
+		[% 'PLUGIN_IRBLASTER_PLAYER_NAME' | string %] [% playername %]
+		&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;
+		[% 'PLUGIN_IRBLASTER_PLAYER_MAC' | string %] [% player %]
+	</td>
+	</tr>
+
+	</table>
+
+		<!-- end plugins output -->
+
+[% END %]
+
+
+[% PROCESS settings/footer.html %]

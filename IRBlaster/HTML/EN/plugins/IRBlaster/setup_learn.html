@@ -1,0 +1,379 @@
+[% PROCESS settings/header.html %]
+
+
+[% SET irblaster_supported = 0 %]
+[% PERL %]
+my $player=Slim::Player::Client::getClient($stash->{player});
+if( defined( $player)) {
+	if( $player->isa( "Slim::Player::Squeezebox2")) {
+		$stash->{irblaster_supported} = 1;
+	} else {
+		print '<br><br><font color="red">';
+		print '[% 'PLUGIN_IRBLASTER_PLAYER_NOT_SUPPORTED' | string %]';
+		print '<br><br></font>';
+	}
+}
+[% END %]
+[% IF irblaster_supported == 1 %]
+
+<div class="settingSection">
+	<div class="prefHead">[% 'PLUGIN_IRBLASTER_SETUP' | string | upper %]</div>
+</div>
+
+		<!-- start plugins output -->
+		
+[% IF step == 4 %]
+
+<script>
+<!--
+
+var req;
+
+function loadXMLDoc(url) {
+  req = false;
+  // branch for native XMLHttpRequest object
+  if( window.XMLHttpRequest) {
+    try {
+      req = new XMLHttpRequest();
+    } catch( e) {
+      req = false;
+    }
+  // branch for IE/Windows ActiveX version
+  } else if( window.ActiveXObject) {
+    try {
+      req = new ActiveXObject( "Msxml2.XMLHTTP");
+    } catch( e) {
+      try {
+        req = new ActiveXObject( "Microsoft.XMLHTTP");
+      } catch(e) {
+        req = false;
+      }
+    }
+  }
+  if( req) {
+    req.onreadystatechange = processReqChange;
+    req.open("GET", url, true);
+    req.send("");
+  }
+}
+
+var tableWave = "";
+
+function processReqChange() {
+  // only if req shows "loaded"
+  if( req.readyState == 4) {
+  // only if "OK"
+    if( req.status == 200) {
+      // ...processing statements go here...
+      var response = req.responseXML.documentElement;
+      var theCode = response.getElementsByTagName('mycode')[0].firstChild.data;
+
+      // Show values in textarea
+      document.getElementById( "learnCode").value = theCode;
+
+      if( theCode != ".\n") {
+        var arrCommands = theCode.split('\n\n');
+        // We do only visualize the first command
+        theCode = arrCommands[0];
+
+	var arrCode = theCode.split(' ');
+			
+        if( tableWave == "") {
+          var waveLength = 0;
+			
+          tableWave += "<table border='0' cellspacing='0' cellpadding='0'>";
+          tableWave += "<tr>";
+          for( i = 0; i < arrCode.length; i+=2) {
+            var high_code = arrCode[i] / 100;
+            var low_code = arrCode[i+1] / 100;
+
+            // Limit (last) value
+            if( high_code > 150) { high_code = 150; }
+            if( low_code > 150) { low_code = 150; }
+			
+            waveLength += high_code + low_code;
+            if( waveLength > ( document.body.clientWidth - 150)) {
+              waveLength = high_code + low_code;
+              tableWave += "</tr>";
+              tableWave += "</table>";
+              tableWave += "<br>"
+              tableWave += "<table border='0' cellspacing='0' cellpadding='0'>";
+              tableWave += "<tr>";
+            }    
+            tableWave += "<td><img src='html/images/wave_line.gif' height='20' width='1'></td>";
+            tableWave += "<td><img src='html/images/wave_high.gif' height='20' width='"+high_code+"'></td>";
+            tableWave += "<td><img src='html/images/wave_line.gif' height='20' width='1'></td>";
+            tableWave += "<td><img src='html/images/wave_low.gif' height='20' width='"+low_code+"'></td>";
+          }
+          tableWave += "</tr>";
+          tableWave += "</table>";
+          document.getElementById('wave').innerHTML = tableWave;
+        }
+      }
+    } else {
+//    alert( "There was a problem retrieving the XML data:\n" + req.statusText);
+    }
+  }
+}
+
+function getIt() {
+  loadXMLDoc("learncode.xml?x=" + Math.random());
+  setTimeout( 'getIt();', 1000);
+}
+
+setTimeout( 'getIt();', 1000);
+
+//-->
+</script>
+
+[% END %]
+		
+		
+
+	<input type="hidden" name="playername" value="[% playername %]">
+	<input type="hidden" name="mode" value="">
+	<input type="hidden" name="step" value="[% step %]">
+	<table cellspacing="0" width="100%" border="0">
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Step - File / Device - Button *** -->
+	<tr>
+	<td colspan="1" width="60">
+		[% 'PLUGIN_IRBLASTER_STEP' | string %]: [% step %]
+	</td>
+	<td colspan="1" width="200">
+		[% 'PLUGIN_IRBLASTER_FILE_DEVICE' | string %]: [% filedevicename %]
+	</td>
+	<td colspan="1" width="120">
+		[% 'PLUGIN_IRBLASTER_BUTTON' | string %]: [% buttonname %]
+	</td>
+	<td colspan="2">
+		&nbsp;
+	</td>
+	</tr>
+	
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		&nbsp;
+	</td>
+	</tr>
+
+	<!-- *** Step *** -->
+	<tr>
+	[% IF step == 1 %]
+		<td colspan="5" valign="top">
+			[% 'PLUGIN_IRBLASTER_WELCOME_TO_IR_LEARNING_WIZARD' | string %]
+			<br>
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_NEXT_TO_CONTINUE' | string %]
+			<br>
+			&nbsp;
+			<br>
+			&nbsp;
+		</td>
+	[% END %]
+		
+	[% IF step == 2 %]
+		<td colspan="2" valign="top">
+			[% 'PLUGIN_IRBLASTER_PLEASE_ENTER_A_FILE_DEVICE_NAME' | string %]
+			<br>
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_NEXT_TO_CONTINUE' | string %]
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_RESTART_TO_ABORT' | string %]
+			<br>
+			&nbsp;
+		</td>
+		<td colspan="3" valign="top">
+			<input type="text" name="filedevicename" value="" onKeyPress="if(event.keyCode==13){settingsForm.mode.value='next';submit();};">
+		</td>
+	[% END %]
+
+	[% IF step == 3 %]
+		<td colspan="2" valign="top">
+			[% 'PLUGIN_IRBLASTER_PLEASE_ENTER_A_BUTTON_NAME' | string %]
+			<br>
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_NEXT_TO_CONTINUE' | string %]
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_DONE_TO_FINISH_RECORDING' | string %]
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_RESTART_TO_ABORT' | string %]
+		</td>
+		<td colspan="3" valign="top">
+			<input type="text" name="buttonname" value="" onKeyPress="if(event.keyCode==13){settingsForm.mode.value='next';submit();};">
+		</td>
+	[% END %]
+
+	[% IF step == 4 %]
+		<td colspan="5" valign="top">
+			[% 'PLUGIN_IRBLASTER_PLEASE_PRESS_BUTTON_ON_REMOTE_ONCE_THEN' | string %]
+			<br>
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_NEXT_TO_SAVE_BUTTON' | string %]
+			<br>
+			[% 'PLUGIN_IRBLASTER_PRESS_RESTART_TO_ABORT' | string %]
+			<br>
+			&nbsp;
+		</td>
+	[% END %]
+
+	[% IF step == 5 %]
+		<td colspan="5" valign="top">
+			[% 'PLUGIN_IRBLASTER_CONGRATULATIONS' | string %]
+			<br>
+			<br>
+			[% 'PLUGIN_IRBLASTER_A_CONFIG_FILE_HAS_BEEN_CREATED_WITH_THE_LEARNED_CODES' | string %]
+			<br>
+			[% 'PLUGIN_IRBLASTER_PLEASE_GO_BACK_TO_THE' | string %]
+			<a href="javascript:void()" onclick="chooseSettings(-1,'PLUGIN_IRBLASTER_MODULE_NAME')">
+				[% 'PLUGIN_IRBLASTER_MODULE_NAME' | string %]
+			</a>
+			[% 'PLUGIN_IRBLASTER_SETTINGS_AND_RELOAD_YOUR_CONFIG_FILES' | string %]
+			<br>
+			&nbsp;
+		</td>
+	[% END %]
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Next - Done - Restart buttons *** -->
+	<tr>
+	<td colspan="2" valign="top">
+		&nbsp;
+	</td>
+	<td colspan="1" valign="top">
+
+	[% IF step <= 4 %]
+		<input name="next_button" type="button" value="[% 'PLUGIN_IRBLASTER_NEXT' | string %]" onClick="settingsForm.mode.value='next';submit();">
+	[% END %]
+
+	</td>
+	<td colspan="1" valign="top">
+
+	[% IF step == 3 %]
+		<input type="button" value="[% 'PLUGIN_IRBLASTER_DONE' | string %]" onClick="settingsForm.mode.value='done';submit();">
+	[% END %]
+
+	</td>
+	<td colspan="1" valign="top">
+
+	[% IF (step > 0) && (step <= 5) %]
+		<input type="button" value="[% 'PLUGIN_IRBLASTER_RESTART' | string %]" onClick="settingsForm.mode.value='restart';submit();">
+	[% END %]
+	</td>
+	</tr>
+
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		<hr>
+	</td>
+	</tr>
+
+	<!-- *** Warning *** -->
+	<tr>
+	<td colspan="5">
+		<span style="color:red;">[% warn %]</span>
+	</td>
+	</tr>
+
+
+	[% IF step == 4 %]
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		&nbsp;
+	</td>
+	</tr>
+
+	<!-- *** Learned wave *** -->
+	<tr>
+	<td colspan="1" valign="top">
+		Wave:
+	</td>
+	<td colspan="4" valign="top">
+		<div id="wave">
+		</div>
+	</td>
+	</tr>
+	
+	<!-- *** Spacer *** -->
+	<tr>
+	<td colspan="5">
+		&nbsp;
+	</td>
+	</tr>
+
+	<!-- *** Learned code window *** -->
+	<tr>
+	<td colspan="1" valign="top">
+		Code:
+	</td>
+	<td colspan="4" valign="top">
+		<textarea id="learnCode" rows="20" cols="40" disabled></textarea>
+	</td>
+	</tr>
+	[% END %]
+
+	</table>
+
+[% IF step == 1 %]
+<script>
+<!--
+document.settingsForm.next_button.focus();
+//-->
+</script>
+[% END %]
+
+[% IF step == 2 %]
+<script>
+<!--
+document.settingsForm.filedevicename.focus();
+//-->
+</script>
+[% END %]
+
+[% IF step == 3 %]
+<script>
+<!--
+document.settingsForm.buttonname.focus();
+//-->
+</script>
+[% END %]
+
+[% IF step == 4 %]
+<script>
+<!--
+document.settingsForm.next_button.focus();
+//-->
+</script>
+[% END %]
+
+
+		<!-- end plugins output -->
+
+[% END %]
+		
+
+[% PROCESS settings/footer.html %]

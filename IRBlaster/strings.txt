@@ -1,0 +1,259 @@
+IRBLASTER
+	DE	IR-Blaster
+	EN	IR-Blaster
+	FR	IR-Blaster
+
+PLUGIN_IRBLASTER_MODULE_NAME
+	DE	IR-Blaster
+	EN	IR-Blaster
+	FR	IR-Blaster
+
+PLUGIN_IRBLASTER_MODULE_DESC
+	DE	IR-Blaster
+	EN	Use the Headphone output to send IR commands
+	FR	IR-Blaster
+
+PLUGIN_IRBLASTER_NOTHING
+	DE	(Noch) nichts einzustellen
+	EN	Nothing to configure (yet)
+	FR	Rien à configurer (pour l'instant)
+
+PLUGIN_IRBLASTER_SETUP
+	DE	Einstellungen
+	EN	Setup
+	FR	Configuration
+	
+PLUGIN_IRBLASTER_DESC
+	DE	Steck einen IR Emitter in den Kopfhoererausgang (Squeezebox) oder den IR Ausgang (Transporter), um IR Kommandos an andere Geraete zu senden, wenn die Squeezebox/Transporter bedient wird.<br><br>Mit einem Klick auf '+' wird ein weiteres IR Kommando hinzugefuegt; mittels Klick auf 'X' wieder entfernt.<br><br>Ein IR Kommando kann mit einem Klick auf 'Test' geprueft werden.
+	EN	Using an IR emitter plugged into the Headphone jack (Squeezebox) or IR out jack (Transporter) IR-Blaster sends IR commands to your other equipment when you control your player. (i.e. when you turn it on or off or when changing volume.)<br><br>Click '+' to add more than one IR command to be sent out in sequence. You can also remove an IR command by clicking on 'X'.<br><br>Use the 'Test' buttons to send out an IR command manually.<br>
+	FR	En connectant un émetteur infra-rouges (IR) à la prise Casque (Squeezebox) ou à la prise IR (Transporter), IR-Blaster peut envoyer des commandes IR à vos autres équipements lorsque vous pilotez votre platine.<br><br>Cliquez sur '+' pour ajouter une nouvelle commande IR à envoyer en séquence. Vous pouvez également supprimer une commande IR en cliquant sur 'X'.<br><br>Utilisez les boutons 'Test' pour envoyer les commandes IR manuellement.<br>
+
+PLUGIN_IRBLASTER_PLAYER_NAME
+	DE	Name des Players:
+	EN	Player name:
+	FR	Nom de la platine :
+	
+PLUGIN_IRBLASTER_PLAYER_MAC
+	DE	MAC Adresse des Players:
+	EN	Player mac:
+	FR	Adresse MAC de la platine :
+
+PLUGIN_IRBLASTER_ACTION
+	DE	Ereignis
+	EN	Action
+	FR	Action
+	
+PLUGIN_IRBLASTER_DEVICE
+	DE	Geraet
+	EN	Device
+	FR	Périphérique
+
+PLUGIN_IRBLASTER_BUTTON
+	DE	Knopf
+	EN	Button
+	FR	Bouton
+
+PLUGIN_IRBLASTER_DELAY
+	DE	Pause
+	EN	Delay
+	FR	Délai
+	
+PLUGIN_IRBLASTER_POWER_ON
+	DE	Einschalten:
+	EN	Power On:
+	FR	Mise en route :
+	
+PLUGIN_IRBLASTER_POWER_OFF
+	DE	Ausschalten:
+	EN	Power Off:
+	FR	Extinction :
+
+PLUGIN_IRBLASTER_VOLUME_UP
+	DE	Lauter:
+	EN	Volume Up:
+	FR	Plus fort :
+	
+PLUGIN_IRBLASTER_VOLUME_DOWN
+	DE	Leiser:
+	EN	Volume Down:
+	FR	Moins fort :	
+		
+PLUGIN_IRBLASTER_CONFFILEPATH
+	DE	Pfad zu den Konfigurationsdateien:
+	EN	Configfile Path:
+	FR	Chemin d'accès au fichier de configuration :
+
+PLUGIN_IRBLASTER_BUTTON_CHANGE
+	DE	Speichern
+	EN	Apply
+	FR	Appliquer
+	
+PLUGIN_IRBLASTER_HINT
+	DE	Tip:<br>Der IR-Blaster kann ausprobiert werden, indem man den IR Emitter an der Squeezebox/Transporter selbst anbringt, 'slim' als Geraet und 'play' als Knopf auswaehlt. Wenn nun auf 'Test' geklickt wird, sollte die Squeezebox/Transporter anfangen zu spielen.
+	EN	Hint:<br>You can test IR-Blaster by attaching the IR emitter to the front of the Squeezebox/Transporter and then select 'slim' as Device and 'play' as Button. Then click on the corresponding 'Test' button. Squeezebox/Transporter should start playing.
+	FR	Astuce :<br>Vous pouvez tester IR-Blaster en positionnant l'émetteur IR en face de la Squeezebox ou du Transporter, et en sélectionnant ensuite le périphérique 'slim' et le bouton 'Lecture'. Cliquez ensuite sur le bouton 'Test' correspondant. La Squeezebox ou le Transporter devrait commencer la lecture. 
+
+PLUGIN_IRBLASTER_CLICK_HERE
+	DE	Zum Oeffnen hier klicken:
+	EN	Click here to open:
+	FR	Cliquez ici pour ouvrir :
+	
+PLUGIN_IRBLASTER_IR_LEARNING_WIZARD
+	DE	IR-Learning Wizard
+	EN	IR-Learning wizard
+	FR	IR-Blaster Apprentissage
+	
+PLUGIN_IRBLASTER_PRESS_BUTTON_ON_REMOTE
+	DE	Druecke den Knopf auf der Fernbedienung
+	EN	Press button on remote
+	FR	Appuyez sur la touche de la télécommande
+	
+PLUGIN_IRBLASTER_FILE_DEVICE_NAME_CANNOT_BE_EMPTY
+	DE	Datei- / Geraetename darf nicht leer sein.
+	EN	File / device name cannot be empty.
+	FR	Le nom du fichier / périphérique doit être renseigné.
+
+PLUGIN_IRBLASTER_FILE_DEVICE_NAME_CAN_ONLY_CONSIST_OF_LETTERS_AND_NUMBERS
+	DE	Datei- / Geraetename darf nur aus Buchstaben und Zahlen bestehen.
+	EN	File / device name can only consist of letters and numbers.
+	FR	Le nom du fichier / périphérique doit être exclusivement constitué de chiffres et de lettres.
+		
+PLUGIN_IRBLASTER_A_FILE_DEVICE_WITH_THAT_NAME_EXISTS
+	DE	Es gibt bereits eine Datei / Geraet mit diesem Namen.
+	EN	A file / device with that name exists.
+	FR	Un fichier / périphérique portant ce nom existe déjà.
+	
+PLUGIN_IRBLASTER_CANNOT_OPEN_FILE_DEVICE_FOR_WRITING
+	DE	Die Datei / Geraet kann nicht zum Schreiben geoeffnet werden.
+	EN	Cannot open file / device for writing.
+	FR	Impossible d'ouvrir le fichier / périphérique en écriture.
+	
+PLUGIN_IRBLASTER_BUTTON_NAME_CANNOT_BE_EMPTY
+	DE	Der Knopfname darf nicht leer sein.
+	EN	Button name cannot be empty.
+	FR	Le nom du bouton doit être renseigné.
+	
+PLUGIN_IRBLASTER_A_CONFIG_FILE_HAS_BEEN_CREATED_WITH_THE_LEARNED_CODES
+	DE	Eine Konfigurationsdatei mit den gelernten Kommandos wurde erstellt.
+	EN	A config file has been created with the learned codes.
+	FR	Un fichier de configuration a été créé avec les codes appris.
+
+PLUGIN_IRBLASTER_PLEASE_GO_BACK_TO_THE
+	DE	Bitte gehe zurueck zu den
+	EN	Please go back to the
+	FR	Veuillez revenir aux
+
+PLUGIN_IRBLASTER_SETTINGS_AND_RELOAD_YOUR_CONFIG_FILES
+	DE	Einstellungen und lade die Konfigurationsdateien neu.
+	EN	settings and reload your config files.
+	FR	paramètres et recharger vos fichiers de configuration.
+	
+PLUGIN_IRBLASTER_STEP
+	DE	Schritt
+	EN	Step
+	FR	Étape
+	
+PLUGIN_IRBLASTER_FILE_DEVICE
+	DE	Datei/Geraet
+	EN	File/device
+	FR	Fichier/Périphérique
+	
+PLUGIN_IRBLASTER_WELCOME_TO_IR_LEARNING_WIZARD
+	DE	Willkommen beim IR-Learning Wizard.
+	EN	Welcome to IR-Learning wizard.
+	FR	Bienvenue dans l'assistant d'apprentissage IR-Blaster.
+	
+PLUGIN_IRBLASTER_PRESS_NEXT_TO_CONTINUE
+	DE	Druecke WEITER, um fortzufahren.
+	EN	Press NEXT to continue.
+	FR	Cliquez sur SUIVANT pour continuer.
+	
+PLUGIN_IRBLASTER_PRESS_NEXT_TO_SAVE_BUTTON
+	DE	Druecke WEITER, um den Knopf zu speichern.
+	EN	Press NEXT to save button.
+	FR	Cliquez sur SUIVANT pour enregistrer le bouton.
+	
+PLUGIN_IRBLASTER_PRESS_RESTART_TO_ABORT
+	DE	Druecke NEUSTART, um abzubrechen.
+	EN	Press RESTART to abort.
+	FR	Cliquez sur RECOMMENCER pour abandonner.
+	
+PLUGIN_IRBLASTER_PRESS_DONE_TO_FINISH_RECORDING
+	DE	Druecke FERTIG, um den Lernvorgang abzuschliessen.
+	EN	Press DONE to finish recording.
+	FR	Cliquez sur TERMINÉ pour arrêter l'enregistrement.
+	
+PLUGIN_IRBLASTER_PLEASE_ENTER_A_FILE_DEVICE_NAME
+	DE	Bitte einen Datei- / Geraetenamen eingeben:
+	EN	Please enter a file / device name:
+	FR	Veuillez saisir un nom de fichier / périphérique :
+	
+PLUGIN_IRBLASTER_PLEASE_ENTER_A_BUTTON_NAME
+	DE	Bitte einen Knopfnamen eingeben:
+	EN	Please enter a button name:
+	FR	Veuillez saisir un nom de bouton :
+	
+PLUGIN_IRBLASTER_PLEASE_PRESS_BUTTON_ON_REMOTE_ONCE_THEN
+	DE	Bitte den entsprechenden Knopf auf der Fernbedienung druecken, dann
+	EN	Please press button on remote once, then
+	FR	Appuyez une fois sur le bouton de la télécommande, et ensuite
+	
+PLUGIN_IRBLASTER_CONGRATULATIONS
+	DE	Glueckwunsch.
+	EN	Congratulations.
+	FR	Félicitations.
+	
+PLUGIN_IRBLASTER_NEXT
+	DE	Weiter
+	EN	Next
+	FR	Suivant
+
+PLUGIN_IRBLASTER_RESTART
+	DE	Neustart
+	EN	Restart
+	FR	Recommencer
+	
+PLUGIN_IRBLASTER_DONE
+	DE	Fertig
+	EN	Done
+	FR	Terminé
+
+PLUGIN_IRBLASTER_REPEATER
+	DE	IR-Repeater:
+	EN	IR-Repeater:
+	FR	Répétiteur IR :
+
+PLUGIN_IRBLASTER_FIXED_VOLUME
+	DE	Voreingestellte Lautstaerke:
+	EN	Fixed volume:
+	FR	Volume fixe :
+
+PLUGIN_IRBLASTER_FIXED_VOLUME_WARNING
+	DE	Achtung: Ein zu hoher Wert koennte die Lautsprecher beschaedigen.
+	EN	Attention: A too high value might damage your loudspeakers.
+	FR	Attention : Une valeur trop élevée risquerait d'endommager vos enceintes.
+
+PLUGIN_IRBLASTER_PLAYER_NOT_SUPPORTED
+	DE	Dieser Player verfuegt nicht ueber IR-Blaster Funktionalitaet.
+	EN	This player does not support IR-Blaster functionality.
+	FR	Cette platine ne supporte pas la fonctionnalité IR-Blaster.
+
+PLUGIN_IRBLASTER_DISABLED
+	DE	-- nicht benutzt --
+	EN	-- disabled --
+	FR	-- désactivé --
+
+PLUGIN_IRBLASTER_RELOAD
+	DE	Neuladen
+	EN	Reload
+	FR	Recharger
+
+PLUGIN_IRBLASTER_ADD_BEFORE
+	DE	Vorher einfuegen
+	EN	Add before
+	FR	Ajouter avant
+
+PLUGIN_IRBLASTER_ADD_AFTER
+	DE	Danach einfuegen
+	EN	Add after
+	FR	Ajouter après

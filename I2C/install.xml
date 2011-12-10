@@ -3,13 +3,13 @@
 	<name>PLUGIN_I2C_NAME</name>
 	<module>Plugins::I2C::Plugin</module>
 	<version>1.0</version>
-	<description>PLUGIN_I2C_NAME_DESC</description>
-	<creator>Felix Müller</creator>
-	<email>felix.mueller@gwendesign.com</email>
+	<description>PLUGIN_I2C_DESC</description>
+	<creator>Felix Müller/Lars Immisch</creator>
+	<email>lars@ibp.de</email>
 
 	<defaultState>enabled</defaultState>
         
-	<homepageURL>http://www.gwendesign.com/slimserver/dev_hard_and_software.htm/</homepageURL>
+	<homepageURL>http://ibp.de/projects/squeezeplugins/</homepageURL>
 	<type>2</type><!-- type=extension -->
 
 	<targetApplication>
